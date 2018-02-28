@@ -13,17 +13,13 @@ abstract class Validador[A, B]{
 
   def processarEtapas(etapas: Seq[Seq[String => Option[TipoErro]]], errosAnteriores: Seq[TipoErro] = Seq()): ResultadoValidacao[A] = {
     etapas match {
-      case Nil => errosAnteriores match {
-        case Nil => ResultadoValidacao(None, gerarEntidade(entidadeArquivo))
-        case _ => ResultadoValidacao(Option(errosAnteriores), gerarEntidade(entidadeArquivo))
-      }
-      case etapa :: proximas => {
+      case Nil => ResultadoValidacao(Option(errosAnteriores), gerarEntidade(entidadeArquivo))
+      case etapa :: proximas =>
         val erros = processarEtapa(etapa)
         if (TipoErro.existeTipoErro(erros))
           ResultadoValidacao(Some(errosAnteriores ++: erros), None)
         else
           processarEtapas(proximas, errosAnteriores ++: erros)
-      }
     }
   }
 
@@ -35,12 +31,12 @@ sealed abstract class TipoErro
 object TipoErro {
 
   def existeTipoErro(lista: Seq[TipoErro]): Boolean = lista match {
-      case head :: tail => head match {
-        case Erro(msg) => true
-        case _ => false
-      }
-      case Nil => false
+    case Nil => false
+    case head :: tail => head match {
+        case Erro(_) => true
+        case _ => existeTipoErro(tail)
     }
+  }
 
 }
 
@@ -60,8 +56,16 @@ object ResultadoValidacao {
   def apply[A](errosOption: Option[Seq[TipoErro]], entidadeOption: Option[A]): ResultadoValidacao[A] = {
     (errosOption, entidadeOption) match {
       case (Some(erros), None) => ResultadoErro(erros)
-      case (Some(erros), Some(entidade)) => ResultadoAviso(erros, entidade)
+      case (Some(erros), Some(entidade)) => verificarCasoErroEntidade(erros, entidade)
       case (None, Some(entidade)) => ResultadoSucesso(entidade)
+    }
+  }
+
+  private def verificarCasoErroEntidade[A](erros: Seq[TipoErro], entidade: A): ResultadoValidacao[A] = {
+    if(TipoErro.existeTipoErro(erros)) ResultadoErro(erros)
+    else erros match {
+      case Nil => ResultadoSucesso(entidade)
+      case _ => ResultadoAviso(erros, entidade)
     }
   }
 }
