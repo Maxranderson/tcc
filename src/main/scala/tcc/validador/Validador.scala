@@ -1,29 +1,32 @@
 package tcc.validador
 abstract class Validador[A, B]{
 
-  abstract val entidadeArquivo: B
+  abstract protected def gerarEntidadeArquivo(linha: String): B
 
-  abstract val etapas: Seq[Seq[String => Option[TipoErro]]]
+  abstract protected val etapas: Seq[Seq[String => Option[TipoErro]]]
 
-  abstract def gerarEntidade(entidadeArquivo: B): Option[A]
-  
-  def processarEtapa(etapa: Seq[String => Option[TipoErro]]): Seq[TipoErro] = {
+  abstract protected def gerarEntidade(entidadeArquivo: B): Option[A]
+
+  protected def processarEtapa(entidadeArquivo: B, etapa: Seq[String => Option[TipoErro]]): Seq[TipoErro] = {
     etapa.flatMap(regra => regra(entidadeArquivo))
   }
 
-  def processarEtapas(etapas: Seq[Seq[String => Option[TipoErro]]], errosAnteriores: Seq[TipoErro] = Seq()): ResultadoValidacao[A] = {
+  protected def processarEtapas(entidadeArquivo: B, etapas: Seq[Seq[String => Option[TipoErro]]], errosAnteriores: Seq[TipoErro] = Seq()): ResultadoValidacao[A] = {
     etapas match {
       case Nil => ResultadoValidacao(Option(errosAnteriores), gerarEntidade(entidadeArquivo))
       case etapa :: proximas =>
-        val erros = processarEtapa(etapa)
+        val erros = processarEtapa(entidadeArquivo, etapa)
         if (TipoErro.existeTipoErro(erros))
           ResultadoValidacao(Some(errosAnteriores ++: erros), None)
         else
-          processarEtapas(proximas, errosAnteriores ++: erros)
+          processarEtapas(entidadeArquivo, proximas, errosAnteriores ++: erros)
     }
   }
 
-  final def validar(linha: String): ResultadoValidacao[A] = processarEtapas(etapas)
+  final def validar(linha: String): ResultadoValidacao[A] ={
+    val entidadeArquivo = gerarEntidadeArquivo(linha)
+    processarEtapas(entidadeArquivo, etapas)
+  }
 }
 
 sealed abstract class TipoErro
