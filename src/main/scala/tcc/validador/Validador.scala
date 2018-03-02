@@ -1,51 +1,68 @@
 package tcc.validador
+
+import java.sql.Date
+
+import sagres.model.{ControleArquivo, TipoErroImportacaoEnum}
+import sagres.model.TipoErroImportacaoEnum.TipoErroImportacaoEnum
+
 abstract class Validador[A, B]{
 
   abstract protected def gerarEntidadeArquivo(linha: String): B
 
-  abstract protected val etapas: Seq[Seq[String => Option[TipoErro]]]
+  abstract protected def gerarEtapas(anoCompetencia: Int): Seq[Seq[( B, DadosValidacao) => Option[TipoErro]]]
 
   abstract protected def gerarEntidade(entidadeArquivo: B): Option[A]
 
-  protected def processarEtapa(entidadeArquivo: B, etapa: Seq[String => Option[TipoErro]]): Seq[TipoErro] = {
+  protected def processarEtapa(entidadeArquivo: B, dadosValidacao: DadosValidacao, etapa: Seq[( B, DadosValidacao) => Option[TipoErro]]): Seq[TipoErro] = {
     etapa.flatMap(regra => regra(entidadeArquivo))
   }
 
-  protected def processarEtapas(entidadeArquivo: B, etapas: Seq[Seq[String => Option[TipoErro]]], errosAnteriores: Seq[TipoErro] = Seq()): ResultadoValidacao[A] = {
+  protected def processarEtapas(entidadeArquivo: B, dadosValidacao: DadosValidacao, etapas: Seq[Seq[( B, DadosValidacao) => Option[TipoErro]]], errosAnteriores: Seq[TipoErro] = Seq()): ResultadoValidacao[A] = {
     etapas match {
       case Nil => ResultadoValidacao(Option(errosAnteriores), gerarEntidade(entidadeArquivo))
       case etapa :: proximas =>
-        val erros = processarEtapa(entidadeArquivo, etapa)
+        val erros = processarEtapa(entidadeArquivo, dadosValidacao, etapa)
         if (TipoErro.existeTipoErro(erros))
           ResultadoValidacao(Some(errosAnteriores ++: erros), None)
         else
-          processarEtapas(entidadeArquivo, proximas, errosAnteriores ++: erros)
+          processarEtapas(entidadeArquivo, dadosValidacao,proximas, errosAnteriores ++: erros)
     }
   }
 
-  final def validar(linha: String): ResultadoValidacao[A] ={
+  protected def processoValidacao(processadorEtapas: (B, DadosValidacao, Seq[Seq[( B, DadosValidacao) => Option[TipoErro]]], Seq[TipoErro]) => ResultadoValidacao[A])
+                                 (linha: String, numeroLinha: Int, dataCompetencia: Date, unidadeGestoraArquivo: String, controleArquivo: ControleArquivo): ResultadoValidacao[A] = {
     val entidadeArquivo = gerarEntidadeArquivo(linha)
-    processarEtapas(entidadeArquivo, etapas)
+    processadorEtapas(entidadeArquivo, DadosValidacao(linha, numeroLinha, dataCompetencia, unidadeGestoraArquivo, controleArquivo),gerarEtapas(controleArquivo.ano))
   }
+
+  final def validar: (String, Int, Date, String, ControleArquivo) => ResultadoValidacao[A] = processoValidacao(processarEtapas)
 }
 
-sealed abstract class TipoErro
+sealed abstract class TipoErro extends Exception {
+  abstract val codigoArquivo: Int
+  abstract val numeroLinha: Int
+  abstract val conteudoLinha: String
+  abstract val tipoErroImportacaoEnum: TipoErroImportacaoEnum
+}
 
 object TipoErro {
 
   def existeTipoErro(lista: Seq[TipoErro]): Boolean = lista match {
     case Nil => false
     case head :: tail => head match {
-        case Erro(_) => true
+        case _: Erro => true
         case _ => existeTipoErro(tail)
     }
   }
-
 }
 
-case class Erro(msg: String) extends TipoErro
+sealed case class Erro(codigoArquivo: Int, numeroLinha: Int, conteudoLinha: String, msg: String) extends TipoErro {
+ val tipoErroImportacaoEnum: TipoErroImportacaoEnum = TipoErroImportacaoEnum.ERROR
+}
 
-case class Aviso(msg: String) extends TipoErro
+sealed case class Aviso(codigoArquivo: Int, numeroLinha: Int, conteudoLinha: String, msg: String) extends TipoErro {
+  val tipoErroImportacaoEnum: TipoErroImportacaoEnum = TipoErroImportacaoEnum.WARNING
+}
 
 sealed abstract class ResultadoValidacao[A]
 
@@ -72,3 +89,5 @@ object ResultadoValidacao {
     }
   }
 }
+
+final case class DadosValidacao(conteudoLinha: String, numeroLinha: Int, dataCompetencia: Date, unidadeGestoraArquivo: String, controleArquivo: ControleArquivo)
