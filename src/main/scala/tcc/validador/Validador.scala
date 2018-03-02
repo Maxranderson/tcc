@@ -31,11 +31,12 @@ abstract class Validador[A] {
 
   protected def processoValidacao(processadorEtapas: (entidadeArquivo, MetaDadosValidacao, Seq[Seq[( entidadeArquivo, MetaDadosValidacao) => Option[TipoErro]]], Seq[TipoErro]) => ResultadoValidacao[A])
                                  (linha: String, numeroLinha: Int, dataCompetencia: Date, unidadeGestoraArquivo: String, controleArquivo: ControleArquivo): ResultadoValidacao[A] = {
-    val entidadeArquivo = gerarEntidadeArquivo(linha)
-    processadorEtapas(entidadeArquivo, MetaDadosValidacao(linha, numeroLinha, dataCompetencia, unidadeGestoraArquivo, controleArquivo),gerarEtapas(controleArquivo.ano))
+    processadorEtapas(gerarEntidadeArquivo(linha), MetaDadosValidacao(linha, numeroLinha, dataCompetencia, unidadeGestoraArquivo, controleArquivo),gerarEtapas(controleArquivo.ano))
   }
 
-  final def validar: (String, Int, Date, String, ControleArquivo) => ResultadoValidacao[A] = processoValidacao(processarEtapas)
+  final def validar(linha: String, numeroLinha: Int, dataCompetencia: Date, unidadeGestoraArquivo: String, controleArquivo: ControleArquivo): ResultadoValidacao[A] = {
+    processoValidacao(processarEtapas)(linha, numeroLinha, dataCompetencia, unidadeGestoraArquivo, controleArquivo)
+  }
 }
 
 final case class MetaDadosValidacao(conteudoLinha: String, numeroLinha: Int, dataCompetencia: Date, unidadeGestoraArquivo: String, controleArquivo: ControleArquivo)
