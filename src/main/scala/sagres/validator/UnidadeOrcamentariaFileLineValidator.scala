@@ -2,7 +2,8 @@ package sagres.validator
 
 import java.util.Calendar
 
-import sagres.model.{ UnidadeOrcamentaria, ControleArquivo, ImportacaoException, UnidadesOrcamentarias, TipoErroImportacaoEnum}
+import sagres.model._
+import sagres.service.CaboBrancoService
 
 import scala.util.{Failure, Success, Try}
 

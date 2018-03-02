@@ -5,6 +5,7 @@ import java.sql.Date
 import java.util.Calendar
 
 import sagres.model._
+import sagres.service.CaboBrancoService
 import sagres.utils.StringUtils._
 
 import scala.collection.mutable.ListBuffer
@@ -15,7 +16,7 @@ class ProgramaFileLineValidator(override protected val line: String,
                             override protected val lineNumber: Int,
                             protected val dataCompetenciaArquivo: Date)(controle: ControleArquivo, erros: ImportacaoException) extends FileLineValidator[Programa] {
 	private lazy val programaBC = Programas
-	private lazy val tipoObjetivoMilenioBC = new TipoObjetivoMilenioBC
+	private lazy val tipoObjetivoMilenioBC = TipoObjetivoMilenio
 	
 	private def getCampo: String => String = controle.getCampo(line, _)
 	//Variáveis brutas
@@ -44,23 +45,17 @@ class ProgramaFileLineValidator(override protected val line: String,
 		val municipioArquivo = ugArquivo.substring(3, 6)
 		val ugsExcluidas = Array("701", "101")
 		val ehPrefeitura = ugArq == "201"
-		
-		val ugsExistente = ListBuffer[String]()
-		val ugsInexistente = ListBuffer[String]()
-		
-		if(!ugsExistente.contains(codigoUnidadeGestoraStr) && !ugsInexistente.contains(codigoUnidadeGestoraStr)){
-			CaboBrancoService.getJurisdicionadoByNumeroUG(codigoUnidadeGestoraStr) match {
-				case Success(result) => {
-					if(!result.isEmpty) ugsExistente += codigoUnidadeGestoraStr
-					else ugsInexistente += codigoUnidadeGestoraStr
-				}
-				
-				case Failure(e) => throw e
+
+		val ugEncontrada: String = CaboBrancoService.getJurisdicionadoByNumeroUG(codigoUnidadeGestoraStr) match {
+			case Success(result) => {
+				result
 			}
+
+			case Failure(e) => throw e
 		}
-		if(ugsInexistente.contains(codigoUnidadeGestoraStr)) erros.adicionarErro(controle.codigoArquivo, lineNumber, line, s"Unidade Gestora não existe em nosso sistema: ${codigoUnidadeGestoraStr.ifIsEmpty("Não informado")}. $msgIdentificadora", TipoErroImportacaoEnum.ERROR)
-		
-		
+
+		if(!ugEncontrada.contains(codigoUnidadeGestoraStr)) erros.adicionarErro(controle.codigoArquivo, lineNumber, line, s"Unidade Gestora não existe em nosso sistema: ${codigoUnidadeGestoraStr.ifIsEmpty("Não informado")}. $msgIdentificadora", TipoErroImportacaoEnum.ERROR)
+
 		if(municipioCod != municipioArquivo) erros.adicionarErro(controle.codigoArquivo, lineNumber, line, s"Unidade Gestora não pertence ao município atual: ${codigoUnidadeGestoraStr.ifIsEmpty("Não informado")}. $msgIdentificadora", TipoErroImportacaoEnum.ERROR)
 		
 		if(ehPrefeitura && ugsExcluidas.contains(ugCod)) erros.adicionarErro(controle.codigoArquivo, lineNumber, line, s"Prefeitura não pode enviar programas da Câmara ou de Consórcios: ${codigoUnidadeGestoraStr.ifIsEmpty("Não informado")}. $msgIdentificadora", TipoErroImportacaoEnum.ERROR)
@@ -119,7 +114,7 @@ class ProgramaFileLineValidator(override protected val line: String,
 		
 	}
 	
-	private def afterValidateLine(calendarDataEnvioArquivo: Calendar)(implicit s: Session, controle: ControleArquivo, erros: ImportacaoException) = {
+	private def afterValidateLine(calendarDataEnvioArquivo: Calendar)(controle: ControleArquivo, erros: ImportacaoException) = {
 	
 		val programa = getPrograma
 		

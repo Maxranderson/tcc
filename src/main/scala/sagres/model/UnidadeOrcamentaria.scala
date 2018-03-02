@@ -27,5 +27,5 @@ case class UnidadeOrcamentaria (id:Option[Long],
 }
 
 object UnidadesOrcamentarias{
-
+  def findUnique(unidadeGestora: String, codigoUnidadeOrcamentaria: String, ano: Int): Option[UnidadeOrcamentaria] = None
 }
