@@ -7,17 +7,17 @@ import sagres.model.TipoErroImportacaoEnum.TipoErroImportacaoEnum
 
 abstract class Validador[A] {
 
-  abstract protected def gerarEntidadeArquivo(linha: String): entidadeArquivo
+  protected def gerarEntidadeArquivo(linha: String, metaDados: MetaDadosValidacao): entidadeArquivo
 
-  abstract protected def gerarEtapas(anoCompetencia: Int): Seq[Seq[( entidadeArquivo, MetaDadosValidacao) => Option[TipoErro]]]
+  protected def gerarEtapas(anoCompetencia: Int): Seq[Seq[( entidadeArquivo, MetaDadosValidacao) => Option[TipoErro]]]
 
-  abstract protected def gerarEntidade(entidadeArquivo: entidadeArquivo, metaDadosValidacao: MetaDadosValidacao): Option[A]
+  protected def gerarEntidade(entidadeArquivo: entidadeArquivo, metaDadosValidacao: MetaDadosValidacao): Option[A]
 
   protected def processarEtapa(entidadeArquivo: entidadeArquivo, dadosValidacao: MetaDadosValidacao, etapa: Seq[( entidadeArquivo, MetaDadosValidacao) => Option[TipoErro]]): Seq[TipoErro] = {
-    etapa.flatMap(regra => regra(entidadeArquivo))
+    etapa.flatMap(regra => regra(entidadeArquivo, dadosValidacao))
   }
 
-  protected def processarEtapas(entidadeArquivo: entidadeArquivo, dadosValidacao: MetaDadosValidacao, etapas: Seq[Seq[( entidadeArquivo, MetaDadosValidacao) => Option[TipoErro]]], errosAnteriores: Seq[TipoErro] = Seq()): ResultadoValidacao[A] = {
+  protected def processarEtapas(entidadeArquivo: entidadeArquivo, dadosValidacao: MetaDadosValidacao, etapas: Seq[Seq[( entidadeArquivo, MetaDadosValidacao) => Option[TipoErro]]], errosAnteriores: Seq[TipoErro] = Seq[TipoErro]()): ResultadoValidacao[A] = {
     etapas match {
       case Nil => ResultadoValidacao(Option(errosAnteriores), gerarEntidade(entidadeArquivo, dadosValidacao))
       case etapa :: proximas =>
@@ -31,7 +31,8 @@ abstract class Validador[A] {
 
   protected def processoValidacao(processadorEtapas: (entidadeArquivo, MetaDadosValidacao, Seq[Seq[( entidadeArquivo, MetaDadosValidacao) => Option[TipoErro]]], Seq[TipoErro]) => ResultadoValidacao[A])
                                  (linha: String, numeroLinha: Int, dataCompetencia: Date, unidadeGestoraArquivo: String, controleArquivo: ControleArquivo): ResultadoValidacao[A] = {
-    processadorEtapas(gerarEntidadeArquivo(linha), MetaDadosValidacao(linha, numeroLinha, dataCompetencia, unidadeGestoraArquivo, controleArquivo),gerarEtapas(controleArquivo.ano))
+    val metaDados = MetaDadosValidacao(linha, numeroLinha, dataCompetencia, unidadeGestoraArquivo, controleArquivo)
+    processadorEtapas(gerarEntidadeArquivo(linha, metaDados), metaDados,gerarEtapas(controleArquivo.ano), Seq[TipoErro]())
   }
 
   final def validar(linha: String, numeroLinha: Int, dataCompetencia: Date, unidadeGestoraArquivo: String, controleArquivo: ControleArquivo): ResultadoValidacao[A] = {

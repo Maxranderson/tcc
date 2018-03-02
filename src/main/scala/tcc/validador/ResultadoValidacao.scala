@@ -14,6 +14,7 @@ object ResultadoValidacao {
       case (Some(erros), None) => ResultadoErro(erros)
       case (Some(erros), Some(entidade)) => verificarCasoErroEntidade(erros, entidade)
       case (None, Some(entidade)) => ResultadoSucesso(entidade)
+      case (None, None) => ResultadoErro(Seq[TipoErro]())
     }
   }
 

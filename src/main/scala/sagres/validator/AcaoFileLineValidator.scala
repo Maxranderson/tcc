@@ -12,7 +12,7 @@ import sagres.utils.StringUtils._
 class AcaoFileLineValidator(override protected val line: String,
                                override protected val ugArquivo: String,
                                override protected val lineNumber: Int,
-                               protected val dataCompetenciaArquivo: Date)(controle: ControleArquivo, erros: ImportacaoException) extends FileLineValidator[Acao] {
+                               protected val dataCompetenciaArquivo: Date)(implicit controle: ControleArquivo, erros: ImportacaoException) extends FileLineValidator[Acao] {
 	
 	
 	private def getCampo: String => String = controle.getCampo(line, _)
@@ -113,7 +113,7 @@ class AcaoFileLineValidator(override protected val line: String,
 		Some(Acao(None, getUnidadeGestora, ano, getCodigoAcao, getDenominacaoAcao, getTipoAcao, getUnidadeMedida, getDescricaoMeta, mesEnvio))
 	}
 	
-	private def afterValidateLine(calendarDataEnvioArquivo: Calendar)(controle: ControleArquivo, erros: ImportacaoException) = {
+	private def afterValidateLine(calendarDataEnvioArquivo: Calendar)(implicit controle: ControleArquivo, erros: ImportacaoException) = {
 		val acaoBC = Acoes
 		val tipoAcaoBC = TiposAcao
 		

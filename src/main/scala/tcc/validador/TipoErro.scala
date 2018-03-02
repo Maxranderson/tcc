@@ -4,10 +4,10 @@ import sagres.model.TipoErroImportacaoEnum
 import sagres.model.TipoErroImportacaoEnum.TipoErroImportacaoEnum
 
 sealed abstract class TipoErro extends Exception {
-  abstract val codigoArquivo: Int
-  abstract val numeroLinha: Int
-  abstract val conteudoLinha: String
-  abstract val tipoErroImportacaoEnum: TipoErroImportacaoEnum
+  val codigoArquivo: Int
+  val numeroLinha: Int
+  val conteudoLinha: String
+  val tipoErroImportacaoEnum: TipoErroImportacaoEnum
 }
 
 object TipoErro {

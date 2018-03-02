@@ -14,7 +14,7 @@ import scala.util.{Failure, Success}
 class ProgramaFileLineValidator(override protected val line: String,
                             override protected val ugArquivo: String,
                             override protected val lineNumber: Int,
-                            protected val dataCompetenciaArquivo: Date)(controle: ControleArquivo, erros: ImportacaoException) extends FileLineValidator[Programa] {
+                            protected val dataCompetenciaArquivo: Date)(implicit controle: ControleArquivo, erros: ImportacaoException) extends FileLineValidator[Programa] {
 	private lazy val programaBC = Programas
 	private lazy val tipoObjetivoMilenioBC = TipoObjetivoMilenio
 	
@@ -114,7 +114,7 @@ class ProgramaFileLineValidator(override protected val line: String,
 		
 	}
 	
-	private def afterValidateLine(calendarDataEnvioArquivo: Calendar)(controle: ControleArquivo, erros: ImportacaoException) = {
+	private def afterValidateLine(calendarDataEnvioArquivo: Calendar)(implicit controle: ControleArquivo, erros: ImportacaoException) = {
 	
 		val programa = getPrograma
 		

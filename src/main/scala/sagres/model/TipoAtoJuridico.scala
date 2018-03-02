@@ -5,6 +5,6 @@ case class TipoAtoJuridico(id: Option[Long], nome: String, var cancelled: Option
 object TiposAtoJuridico {
   val tipos = Seq[TipoAtoJuridico]()
   def existsById(id: Long): Boolean = {
-    tipos.exists(_.id == id)
+    tipos.exists(_.id.getOrElse(-1) == id)
   }
 }
