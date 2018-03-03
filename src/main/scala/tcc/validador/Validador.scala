@@ -35,9 +35,9 @@ abstract class Validador[A] {
     processadorEtapas(gerarEntidadeArquivo(linha, metaDados), metaDados,gerarEtapas(controleArquivo.ano), Seq[TipoErro]())
   }
 
-  final def validar(linha: String, numeroLinha: Int, dataCompetencia: Date, unidadeGestoraArquivo: String, controleArquivo: ControleArquivo): ResultadoValidacao[A] = {
-    processoValidacao(processarEtapas)(linha, numeroLinha, dataCompetencia, unidadeGestoraArquivo, controleArquivo)
-  }
+  protected def processoValidacaoNormal: (String, Int, Date, String, ControleArquivo) => ResultadoValidacao[A] = processoValidacao(processarEtapas)
+
+  final def validar: (String, Int, Date, String, ControleArquivo) => ResultadoValidacao[A] = processoValidacaoNormal
 }
 
 final case class MetaDadosValidacao(conteudoLinha: String, numeroLinha: Int, dataCompetencia: Date, unidadeGestoraArquivo: String, controleArquivo: ControleArquivo)
