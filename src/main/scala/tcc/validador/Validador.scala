@@ -13,15 +13,15 @@ abstract class Validador[A] {
 
   protected def gerarEntidade(entidadeArquivo: entidadeArquivo, metaDadosValidacao: MetaDadosValidacao): Option[A]
 
-  protected def processarEtapa(entidadeArquivo: entidadeArquivo, dadosValidacao: MetaDadosValidacao, etapa: Seq[( entidadeArquivo, MetaDadosValidacao) => Option[TipoErro]]): Seq[TipoErro] = {
-    etapa.flatMap(regra => regra(entidadeArquivo, dadosValidacao))
+  protected def processarEtapa(entidadeArquivo: entidadeArquivo, dadosValidacao: MetaDadosValidacao, etapa: Etapa): Seq[TipoErro] = {
+    etapa.regras.flatMap(regra => regra(entidadeArquivo, dadosValidacao))
   }
 
-  protected def processarEtapas(entidadeArquivo: entidadeArquivo, dadosValidacao: MetaDadosValidacao, etapas: Seq[Seq[( entidadeArquivo, MetaDadosValidacao) => Option[TipoErro]]], errosAnteriores: Seq[TipoErro] = Seq[TipoErro]()): ResultadoValidacao[A] = {
+  protected def processarEtapas(entidadeArquivo: entidadeArquivo, dadosValidacao: MetaDadosValidacao, etapas: Seq[Etapa], errosAnteriores: Seq[TipoErro] = Seq[TipoErro]()): ResultadoValidacao[A] = {
     etapas match {
       case Nil => ResultadoValidacao(Option(errosAnteriores), gerarEntidade(entidadeArquivo, dadosValidacao))
       case etapa :: proximas =>
-        val erros = processarEtapa(entidadeArquivo, dadosValidacao, etapa)
+        val erros = etapa.processador(entidadeArquivo, dadosValidacao, etapa)
         if (TipoErro.existeTipoErro(erros))
           ResultadoValidacao(Some(errosAnteriores ++: erros), None)
         else
@@ -29,7 +29,7 @@ abstract class Validador[A] {
     }
   }
 
-  protected def processoValidacao(processadorEtapas: (entidadeArquivo, MetaDadosValidacao, Seq[Seq[( entidadeArquivo, MetaDadosValidacao) => Option[TipoErro]]], Seq[TipoErro]) => ResultadoValidacao[A])
+  protected def processoValidacao(processadorEtapas: (entidadeArquivo, MetaDadosValidacao, Seq[Etapa], Seq[TipoErro]) => ResultadoValidacao[A])
                                  (linha: String, numeroLinha: Int, dataCompetencia: Date, unidadeGestoraArquivo: String, controleArquivo: ControleArquivo): ResultadoValidacao[A] = {
     val metaDados = MetaDadosValidacao(linha, numeroLinha, dataCompetencia, unidadeGestoraArquivo, controleArquivo)
     processadorEtapas(gerarEntidadeArquivo(linha, metaDados), metaDados,gerarEtapas(controleArquivo.ano), Seq[TipoErro]())
@@ -43,3 +43,5 @@ abstract class Validador[A] {
 final case class MetaDadosValidacao(conteudoLinha: String, numeroLinha: Int, dataCompetencia: Date, unidadeGestoraArquivo: String, controleArquivo: ControleArquivo)
 
 trait entidadeArquivo
+
+case class Etapa(processador: (entidadeArquivo, MetaDadosValidacao, Etapa) => Seq[TipoErro], regras: Seq[( entidadeArquivo, MetaDadosValidacao) => Option[TipoErro]])
