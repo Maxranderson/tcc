@@ -1,25 +1,38 @@
 package tcc.validador
 
-import sagres.model.Acao
+import com.sun.net.httpserver.Authenticator.Success
+import sagres.model.TipoErroImportacaoEnum.TipoErroImportacaoEnum
+import sagres.model.{Acao, TipoErroImportacaoEnum}
+import sagres.service.CaboBrancoService
 
-object ValidadorAcao extends Validador[Acao]{
+import scala.util.{Failure, Success}
+
+object ValidadorAcao extends Validador[Acao, ArquivoAcao]{
 
   object integridade {
-    def unidadeGestoraTemSeisNumeros(entidadeArquivo: entidadeArquivo, dadosValidacao: MetaDadosValidacao) = {
-      entidadeArquivo match {
-        case entidadeArquivo: ArquivoAcao =>
-          if(entidadeArquivo.unidadeGestora.length != 6)
-            Option(
-              Erro(
-                dadosValidacao.controleArquivo.codigoArquivo,
-                dadosValidacao.numeroLinha,
-                dadosValidacao.conteudoLinha,
-                "Unidade Gestora Deve conter seis dígitos"
-              )
-            )
-          else None
+    def unidadeGestoraTemSeisNumeros: (entidadeArquivo, MetaDadosValidacao) => Option[TipoErro] = {
+      fazerRegra(TipoErroImportacaoEnum.ERROR, "algo"){
+        (arquivo, dados) => arquivo.unidadeGestora.length != 6
       }
+    }
 
+    def naoPertenceMunicipio: (entidadeArquivo, MetaDadosValidacao) => Option[TipoErro] = {
+      fazerRegra(TipoErroImportacaoEnum.ERROR, "Unidade Gestora não pertence ao município atual"){
+        (arquivo, dados) => arquivo.unidadeGestora.length != 6
+      }
+    }
+
+  }
+
+  object externo {
+    def existeUnidadeGestora: (entidadeArquivo, MetaDadosValidacao) => Option[TipoErro] = {
+      fazerRegra(TipoErroImportacaoEnum.ERROR, "Unidade Gestora não existe em nosso sistema"){
+        (arquivo, dados) =>
+          CaboBrancoService.getJurisdicionadoByNumeroUG(arquivo.unidadeGestora) match {
+            case Success(result) => result.contains(arquivo.unidadeGestora)
+            case Failure(e) => false
+          }
+      }
     }
   }
 
