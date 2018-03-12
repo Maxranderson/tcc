@@ -7,14 +7,14 @@ import sagres.model.TipoErroImportacaoEnum.TipoErroImportacaoEnum
 
 abstract class Validador[A, B] {
 
-  protected def castEntidade(entidadeArquivo: entidadeArquivo)(code: (B) => Option[TipoErro]): Option[TipoErro] = {
+  protected def castEntidade(entidadeArquivo: B)(code: (B) => Option[TipoErro]): Option[TipoErro] = {
     entidadeArquivo match {
       case e: B => code(e)
       case _ => None
     }
   }
 
-  protected def fazerRegra(tipo: TipoErroImportacaoEnum, mensagem: String)(decisao: (B, MetaDadosValidacao) => Boolean)(entidadeArquivo: entidadeArquivo, dadosValidacao: MetaDadosValidacao): Option[TipoErro] = {
+  protected def fazerRegra(tipo: TipoErroImportacaoEnum, mensagem: String)(decisao: (B, MetaDadosValidacao) => Boolean)(entidadeArquivo: B, dadosValidacao: MetaDadosValidacao): Option[TipoErro] = {
     castEntidade(entidadeArquivo) { entidadeArquivo =>
       if(decisao(entidadeArquivo, dadosValidacao)){
         Option(
@@ -30,13 +30,13 @@ abstract class Validador[A, B] {
     }
   }
 
-  protected def gerarEntidadeArquivo(linha: String, metaDados: MetaDadosValidacao): entidadeArquivo
+  protected def gerarEntidadeArquivo(linha: String, metaDados: MetaDadosValidacao): B
 
-  protected def gerarEtapas(anoCompetencia: Int): Seq[Etapa]
+  protected def gerarEtapas(anoCompetencia: Int): Seq[Etapa[B]]
 
-  protected def gerarEntidade(entidadeArquivo: entidadeArquivo, metaDadosValidacao: MetaDadosValidacao): Option[A]
+  protected def gerarEntidade(entidadeArquivo: B, metaDadosValidacao: MetaDadosValidacao): Option[A]
 
-  protected def processarEtapas(entidadeArquivo: entidadeArquivo, dadosValidacao: MetaDadosValidacao, etapas: Seq[Etapa], errosAnteriores: Seq[TipoErro] = Seq[TipoErro]()): ResultadoValidacao[A] = {
+  protected def processarEtapas(entidadeArquivo: B, dadosValidacao: MetaDadosValidacao, etapas: Seq[Etapa[B]], errosAnteriores: Seq[TipoErro] = Seq[TipoErro]()): ResultadoValidacao[A] = {
     etapas match {
       case Nil => ResultadoValidacao(Option(errosAnteriores), gerarEntidade(entidadeArquivo, dadosValidacao))
       case etapa :: proximas =>
@@ -58,14 +58,12 @@ abstract class Validador[A, B] {
 
 final case class MetaDadosValidacao(conteudoLinha: String, numeroLinha: Int, dataCompetencia: Date, unidadeGestoraArquivo: String, controleArquivo: ControleArquivo)
 
-trait entidadeArquivo
+case class Etapa[A](regras: Seq[Regra[A]], processador: (A, MetaDadosValidacao, Seq[Regra[A]]) => Seq[TipoErro] = Utils.processarEtapa)
 
-case class Etapa(regras: Seq[Regra], processador: (entidadeArquivo, MetaDadosValidacao, Seq[Regra]) => Seq[TipoErro] = Utils.processarEtapa)
-
-case class Regra(validar: (entidadeArquivo, MetaDadosValidacao) => Option[TipoErro])
+case class Regra[A](validar: (A, MetaDadosValidacao) => Option[TipoErro])
 
 package object Utils {
-  def processarEtapa(entidadeArquivo: entidadeArquivo, dadosValidacao: MetaDadosValidacao, etapa: Seq[Regra]): Seq[TipoErro] = {
+  def processarEtapa[A](entidadeArquivo: A, dadosValidacao: MetaDadosValidacao, etapa: Seq[Regra[A]]): Seq[TipoErro] = {
     etapa.flatMap(regra => regra.validar(entidadeArquivo, dadosValidacao))
   }
 }
