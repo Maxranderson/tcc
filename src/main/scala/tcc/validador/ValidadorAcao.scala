@@ -10,13 +10,13 @@ import scala.util.{Failure, Success}
 object ValidadorAcao extends Validador[Acao, ArquivoAcao]{
 
   object integridade {
-    def unidadeGestoraTemSeisNumeros: (entidadeArquivo, MetaDadosValidacao) => Option[TipoErro] = {
+    def unidadeGestoraTemSeisNumeros: (ArquivoAcao, MetaDadosValidacao) => Option[TipoErro] = {
       fazerRegra(TipoErroImportacaoEnum.ERROR, "algo"){
         (arquivo, dados) => arquivo.unidadeGestora.length != 6
       }
     }
 
-    def naoPertenceMunicipio: (entidadeArquivo, MetaDadosValidacao) => Option[TipoErro] = {
+    def naoPertenceMunicipio: (ArquivoAcao, MetaDadosValidacao) => Option[TipoErro] = {
       fazerRegra(TipoErroImportacaoEnum.ERROR, "Unidade Gestora não pertence ao município atual"){
         (arquivo, dados) => arquivo.unidadeGestora.length != 6
       }
@@ -25,7 +25,7 @@ object ValidadorAcao extends Validador[Acao, ArquivoAcao]{
   }
 
   object externo {
-    def existeUnidadeGestora: (entidadeArquivo, MetaDadosValidacao) => Option[TipoErro] = {
+    def existeUnidadeGestora: (ArquivoAcao, MetaDadosValidacao) => Option[TipoErro] = {
       fazerRegra(TipoErroImportacaoEnum.ERROR, "Unidade Gestora não existe em nosso sistema"){
         (arquivo, dados) =>
           CaboBrancoService.getJurisdicionadoByNumeroUG(arquivo.unidadeGestora) match {
@@ -48,11 +48,11 @@ object ValidadorAcao extends Validador[Acao, ArquivoAcao]{
     )
   }
 
-  override protected def gerarEtapas(anoCompetencia: Int): Seq[Seq[( entidadeArquivo, MetaDadosValidacao) => Option[TipoErro]]] = anoCompetencia match {
+  override protected def gerarEtapas(anoCompetencia: Int): Seq[Seq[( ArquivoAcao, MetaDadosValidacao) => Option[TipoErro]]] = anoCompetencia match {
     case _ => List(List(integridade.unidadeGestoraTemSeisNumeros))
   }
 
-  override protected def gerarEntidade(entidadeArquivo: entidadeArquivo, metaDadosValidacao: MetaDadosValidacao): Option[Acao] = {
+  override protected def gerarEntidade(entidadeArquivo: ArquivoAcao, metaDadosValidacao: MetaDadosValidacao): Option[Acao] = {
     entidadeArquivo match {
       case entidadeArquivo: ArquivoAcao =>
         Option(
@@ -79,4 +79,4 @@ case class ArquivoAcao(
                         tipoAcao: String,
                         descricaoMeta: String,
                         unidadeMedida: String
-                      ) extends entidadeArquivo
+                      )
