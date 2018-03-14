@@ -6,7 +6,7 @@ case class TipoAcao(id: Option[Long], codigo: String, nome: String, var cancelle
 object TiposAcao{
 
   def findUnique(id: String): Option[TipoAcao] ={
-    None
+    Some(TipoAcao(None, "algo", "nome"))
   }
 
 }

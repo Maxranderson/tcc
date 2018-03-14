@@ -61,7 +61,7 @@ object UnidadeGestoraRegras {
       Regra(TipoErroImportacaoEnum.ERROR, "Unidade Gestora não existe em nosso sistema"){
         (arquivo: unidadeGestoraRel, dados) =>
           CaboBrancoService.getJurisdicionadoByNumeroUG(arquivo.codigoUnidadeGestora) match {
-            case Success(result) => result.contains(arquivo.codigoUnidadeGestora)
+            case Success(result) => !result.contains(arquivo.codigoUnidadeGestora)
             case Failure(e) => true
           }
       }
