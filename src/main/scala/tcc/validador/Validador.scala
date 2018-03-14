@@ -9,6 +9,12 @@ import scala.util.{Success, Try}
 
 abstract class Validador[A] {
 
+  private def linhaDiferenteDoControleArquivo: Regra = {
+    Regra(TipoErroImportacaoEnum.ERROR, "Tamanho da linha inválido"){
+      (arquivo: entidadeArquivo, dados) => dados.conteudoLinha.length != dados.controleArquivo.tamanhoLinha
+    }
+  }
+
   protected def gerarEntidadeArquivo(linha: String, metaDados: MetaDadosValidacao): entidadeArquivo
 
   protected def gerarEtapas(anoCompetencia: Int): Seq[Etapa]
@@ -29,7 +35,7 @@ abstract class Validador[A] {
 
   protected def processoValidacao(linha: String, numeroLinha: Int, dataCompetencia: Date, unidadeGestoraArquivo: String, controleArquivo: ControleArquivo): ResultadoValidacao[A] = {
     val metaDados = MetaDadosValidacao(linha, numeroLinha, dataCompetencia, unidadeGestoraArquivo, controleArquivo)
-    processarEtapas(gerarEntidadeArquivo(linha, metaDados), metaDados,gerarEtapas(controleArquivo.ano), Seq[TipoErro]())
+    processarEtapas(gerarEntidadeArquivo(linha, metaDados), metaDados,Etapa(List(linhaDiferenteDoControleArquivo)) +: gerarEtapas(controleArquivo.ano), Seq[TipoErro]())
   }
 
   final def validar: (String, Int, Date, String, ControleArquivo) => ResultadoValidacao[A] = processoValidacao
@@ -42,6 +48,11 @@ trait entidadeArquivo
 case class Etapa(regras: Seq[Regra], processador: (entidadeArquivo, MetaDadosValidacao, Seq[Regra]) => Seq[TipoErro] = Utils.processarEtapa)
 
 case class Regra(validar: (entidadeArquivo, MetaDadosValidacao) => Option[TipoErro])
+
+object Regra {
+
+  def apply[T](tipo: TipoErroImportacaoEnum, mensagem: String)(decisao: (T, MetaDadosValidacao) => Boolean): Regra = new Regra(Utils.fazerRegra(tipo, mensagem)(decisao))
+}
 
 package object Utils {
   def castEntidadeTrait[T](entidade: entidadeArquivo)(code: (T) => Option[TipoErro]): Option[TipoErro] = {
