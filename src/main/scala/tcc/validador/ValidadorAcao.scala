@@ -1,39 +1,58 @@
 package tcc.validador
 
-import com.sun.net.httpserver.Authenticator.Success
-import sagres.model.TipoErroImportacaoEnum.TipoErroImportacaoEnum
-import sagres.model.{Acao, TipoErroImportacaoEnum}
-import sagres.service.CaboBrancoService
+import sagres.model.{Acao, Acoes, TipoErroImportacaoEnum, TiposAcao}
 
-import scala.util.{Failure, Success}
-
-object ValidadorAcao extends Validador[Acao, ArquivoAcao]{
+object ValidadorAcao extends Validador[Acao]{
 
   object integridade {
-    def unidadeGestoraTemSeisNumeros: (ArquivoAcao, MetaDadosValidacao) => Option[TipoErro] = {
-      fazerRegra(TipoErroImportacaoEnum.ERROR, "algo"){
-        (arquivo, dados) => arquivo.unidadeGestora.length != 6
+
+    val todas = List(
+      naoContemCodigoAcao,
+      codigoAcaoMenorQueQuatro,
+      denominacaoMenorQueDez
+    )
+
+    def naoContemCodigoAcao: Regra = Regra(TipoErroImportacaoEnum.ERROR, "Código da ação deve ser informado."){
+      (arquivo: ArquivoAcao, dados) => arquivo.codigoAcao.isEmpty
+    }
+
+    def codigoAcaoMenorQueQuatro: Regra = {
+      Regra(TipoErroImportacaoEnum.ERROR, "Código da ação não deve ser inferior a 4 caracteres."){
+        (arquivo: ArquivoAcao, dados) => arquivo.codigoAcao.length < 4
       }
     }
 
-    def naoPertenceMunicipio: (ArquivoAcao, MetaDadosValidacao) => Option[TipoErro] = {
-      fazerRegra(TipoErroImportacaoEnum.ERROR, "Unidade Gestora não pertence ao município atual"){
-        (arquivo, dados) => arquivo.unidadeGestora.length != 6
+    def denominacaoMenorQueDez: Regra = {
+      val minDescricao = 10
+      Regra(TipoErroImportacaoEnum.ERROR, s"Descrição da ação não deve ser inferior a $minDescricao caracteres"){
+        (arquivo: ArquivoAcao, dados) => arquivo.denominacaoAcao.length < minDescricao
       }
     }
-
   }
 
   object externo {
-    def existeUnidadeGestora: (ArquivoAcao, MetaDadosValidacao) => Option[TipoErro] = {
-      fazerRegra(TipoErroImportacaoEnum.ERROR, "Unidade Gestora não existe em nosso sistema"){
-        (arquivo, dados) =>
-          CaboBrancoService.getJurisdicionadoByNumeroUG(arquivo.unidadeGestora) match {
-            case Success(result) => result.contains(arquivo.unidadeGestora)
-            case Failure(e) => false
-          }
+
+    val todas = List(
+      existeAcao,
+      naoExisteTipoAcao
+    )
+
+    def existeAcao: Regra = {
+      Regra(TipoErroImportacaoEnum.ERROR, "Ação já cadastrada no sistema"){
+        (arquivo: ArquivoAcao, dados) => Acoes.findUnique(
+          arquivo.unidadeMedida,
+          arquivo.codigoAcao,
+          dados.dataCompetencia.toLocalDate.getYear
+        ).isDefined
       }
     }
+
+    def naoExisteTipoAcao: Regra = {
+      Regra(TipoErroImportacaoEnum.ERROR, "Código do tipo da ação inválida."){
+        (arquivo: ArquivoAcao, dados) => TiposAcao.findUnique(arquivo.tipoAcao).isEmpty
+      }
+    }
+
   }
 
   override protected def gerarEntidadeArquivo(linha: String, metaDados: MetaDadosValidacao): ArquivoAcao = {
@@ -48,17 +67,24 @@ object ValidadorAcao extends Validador[Acao, ArquivoAcao]{
     )
   }
 
-  override protected def gerarEtapas(anoCompetencia: Int): Seq[Seq[( ArquivoAcao, MetaDadosValidacao) => Option[TipoErro]]] = anoCompetencia match {
-    case _ => List(List(integridade.unidadeGestoraTemSeisNumeros))
+  override protected def gerarEtapas(anoCompetencia: Int): Seq[Etapa] = anoCompetencia match {
+    case _ => List(
+      Etapa(
+        UnidadeGestoraRegras.externo.todas ++: integridade.todas
+      ),
+      Etapa(
+        UnidadeGestoraRegras.externo.todas ++: externo.todas
+      )
+    )
   }
 
-  override protected def gerarEntidade(entidadeArquivo: ArquivoAcao, metaDadosValidacao: MetaDadosValidacao): Option[Acao] = {
+  override protected def gerarEntidade(entidadeArquivo: entidadeArquivo, metaDadosValidacao: MetaDadosValidacao): Option[Acao] = {
     entidadeArquivo match {
       case entidadeArquivo: ArquivoAcao =>
         Option(
           Acao(
             None,
-            entidadeArquivo.unidadeGestora,
+            entidadeArquivo.codigoUnidadeGestora,
             metaDadosValidacao.dataCompetencia.toLocalDate.getYear,
             entidadeArquivo.codigoAcao,
             Option(entidadeArquivo.denominacaoAcao),
@@ -73,10 +99,10 @@ object ValidadorAcao extends Validador[Acao, ArquivoAcao]{
 }
 
 case class ArquivoAcao(
-                        unidadeGestora: String,
+                        codigoUnidadeGestora: String,
                         codigoAcao: String,
                         denominacaoAcao: String,
                         tipoAcao: String,
                         descricaoMeta: String,
                         unidadeMedida: String
-                      )
+                      ) extends entidadeArquivo with unidadeGestoraRel
