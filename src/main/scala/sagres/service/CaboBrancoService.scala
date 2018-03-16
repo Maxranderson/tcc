@@ -4,7 +4,7 @@ import scala.util.{Success, Try}
 
 object CaboBrancoService {
 
-  val unidadesGestoras = Seq("201145")
+  val unidadesGestoras = Seq("201145", "201095")
 
   def getJurisdicionadoByNumeroUG(codigoUnidadeGestoraStr: String): Try[String] = {
     unidadesGestoras.find(_ == codigoUnidadeGestoraStr) match {

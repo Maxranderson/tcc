@@ -70,14 +70,10 @@ object ValidadorAcao extends Validador[Acao]{
   override protected def gerarEtapas(anoCompetencia: Int): Seq[Etapa] = anoCompetencia match {
     case _ => List(
       Etapa(
-        List(
-          UnidadeGestoraRegras.integridade.naoContemUnidadeGestora
-        )
+        UnidadeGestoraRegras.externo.todas ++: integridade.todas
       ),
       Etapa(
-        List(
-          UnidadeGestoraRegras.externo.naoExisteEssaUnidadeGestora
-        )
+        UnidadeGestoraRegras.externo.todas ++: externo.todas
       )
     )
   }
