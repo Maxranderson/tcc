@@ -3,7 +3,7 @@ package tcc.validador
 import sagres.model.TipoErroImportacaoEnum
 import sagres.model.TipoErroImportacaoEnum.TipoErroImportacaoEnum
 
-sealed abstract class TipoErro extends Exception {
+sealed abstract class TipoErro {
   val codigoArquivo: Int
   val numeroLinha: Int
   val conteudoLinha: String

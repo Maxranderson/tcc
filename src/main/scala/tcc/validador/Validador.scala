@@ -5,7 +5,7 @@ import java.sql.Date
 import sagres.model.{ControleArquivo, TipoErroImportacaoEnum}
 import sagres.model.TipoErroImportacaoEnum.TipoErroImportacaoEnum
 
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
 abstract class Validador[A] {
 
@@ -25,8 +25,8 @@ abstract class Validador[A] {
     etapas match {
       case Nil => ResultadoValidacao(Option(errosAnteriores), gerarEntidade(entidadeArquivo, dadosValidacao))
       case etapa :: proximas =>
-        val erros = etapa.processador(entidadeArquivo, dadosValidacao, etapa.regras)
-        if (TipoErro.existeTipoErro(erros))
+        val tryErros = etapa.processador(entidadeArquivo, dadosValidacao, etapa.regras)
+        if (tryErros.isFailure || tryErros.map(erros => TipoErro.existeTipoErro(erros)).getOrElse(true))
           ResultadoValidacao(Some(errosAnteriores ++: erros), None)
         else
           processarEtapas(entidadeArquivo, dadosValidacao,proximas, errosAnteriores ++: erros)
@@ -45,44 +45,69 @@ final case class MetaDadosValidacao(conteudoLinha: String, numeroLinha: Int, dat
 
 trait entidadeArquivo
 
-case class Etapa(regras: Seq[Regra], processador: (entidadeArquivo, MetaDadosValidacao, Seq[Regra]) => Seq[TipoErro] = Utils.processarEtapa)
+case class Etapa(regras: Seq[Regra], processador: (entidadeArquivo, MetaDadosValidacao, Seq[Regra]) => Try[Seq[TipoErro]] = Utils.processarEtapa)
 
-case class Regra(validar: (entidadeArquivo, MetaDadosValidacao) => Option[TipoErro])
+case class Regra(validar: (entidadeArquivo, MetaDadosValidacao) => Try[Option[TipoErro]])
 
 object Regra {
 
-  def apply[T](tipo: TipoErroImportacaoEnum, mensagem: String)(decisao: (T, MetaDadosValidacao) => Boolean): Regra = new Regra(Utils.fazerRegra(tipo, mensagem)(decisao))
+  def apply[T](tipo: TipoErroImportacaoEnum, mensagem: String)(decisao: (T, MetaDadosValidacao) => Try[Boolean]): Regra = new Regra(Utils.fazerRegra(tipo, mensagem)(decisao))
 }
 
 package object Utils {
-  def castEntidadeTrait[T](entidade: entidadeArquivo)(code: (T) => Option[TipoErro]): Option[TipoErro] = {
+  def castEntidadeTrait[T](entidade: entidadeArquivo)(code: (T) => Try[Option[TipoErro]]): Try[Option[TipoErro]] = {
     entidade match {
       case e: entidadeArquivo with T => code(e)
-      case _ => None
+      case _ => Failure(new Exception("Não foi possivel fazer o cast da entidade"))
     }
   }
 
-  def fazerRegra[T](tipo: TipoErroImportacaoEnum, mensagem: String)(decisao: (T, MetaDadosValidacao) => Boolean)(entidadeArquivo: entidadeArquivo, dadosValidacao: MetaDadosValidacao): Option[TipoErro] = {
+  def fazerRegra[T](tipo: TipoErroImportacaoEnum, mensagem: String)(decisao: (T, MetaDadosValidacao) => Try[Boolean])(entidadeArquivo: entidadeArquivo, dadosValidacao: MetaDadosValidacao): Try[Option[TipoErro]] = {
     Utils.castEntidadeTrait[T](entidadeArquivo) { entidadeArquivo =>
-      if(decisao(entidadeArquivo, dadosValidacao)){
-        Option(
-          TipoErro(
-            dadosValidacao.controleArquivo.codigoArquivo,
-            dadosValidacao.numeroLinha,
-            dadosValidacao.conteudoLinha,
-            mensagem,
-            tipo
-          )
-        )
-      }else None
+      tratarExcecaoRegra(decisao(entidadeArquivo, dadosValidacao)){
+        decisao => {
+          if(decisao){
+            Option(
+              TipoErro(
+                dadosValidacao.controleArquivo.codigoArquivo,
+                dadosValidacao.numeroLinha,
+                dadosValidacao.conteudoLinha,
+                mensagem,
+                tipo
+              )
+            )
+          }else None
+        }
+      }
     }
   }
 
-  def processarEtapa(entidadeArquivo: entidadeArquivo, dadosValidacao: MetaDadosValidacao, etapa: Seq[Regra]): Seq[TipoErro] = {
-    etapa.flatMap(regra => regra.validar(entidadeArquivo, dadosValidacao))
+  def tratarExcecaoRegra(tryDecisao: Try[Boolean])(code: (Boolean) => Option[TipoErro]): Try[Option[TipoErro]] = {
+    tryDecisao match {
+      case Success(valor) => Success(code(valor))
+      case Failure(e) => Failure(e)
+    }
   }
 
-  def processarEtapaParalelo(entidadeArquivo: entidadeArquivo, dadosValidacao: MetaDadosValidacao, etapa: Seq[Regra]): Seq[TipoErro] = {
-    etapa.par.flatMap(regra => regra.validar(entidadeArquivo, dadosValidacao)).toVector
+  def processarEtapa(entidadeArquivo: entidadeArquivo, dadosValidacao: MetaDadosValidacao, etapa: Seq[Regra]): Try[Seq[TipoErro]] = {
+    def loop(etapa: Seq[Regra], acumulador: Seq[TipoErro] = Seq()): Try[Seq[TipoErro]] = {
+      etapa match {
+        case Nil => Success(acumulador)
+        case head :: tail =>
+          head.validar(entidadeArquivo, dadosValidacao) match {
+            case Success(tipoErro) =>
+              tipoErro match {
+                case Some(valor) => loop(tail, valor +: acumulador)
+                case None => loop(tail, acumulador)
+              }
+            case Failure(e) => Failure(e)
+          }
+      }
+    }
+    loop(etapa)
   }
+
+//  def processarEtapaParalelo(entidadeArquivo: entidadeArquivo, dadosValidacao: MetaDadosValidacao, etapa: Seq[Regra]): Try[Seq[TipoErro]] = {
+//    etapa.par.flatMap(regra => regra.validar(entidadeArquivo, dadosValidacao)).toVector
+//  }
 }
