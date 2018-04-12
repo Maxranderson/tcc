@@ -1,0 +1,11 @@
+@startuml
+
+
+abstract class Validador[A] {
+#<<final>> processar(a: EntidadeArquivo, b: MetaDados, c: Seq[Etapa]): Try[(Seq[TipoErro], A)]
++<<final>> validar(a: EntidadeArquivo, b: MetaDados): Try[(Seq[TipoErro], A)]
+}
+
+
+
+@enduml

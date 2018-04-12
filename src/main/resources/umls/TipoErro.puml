@@ -1,0 +1,28 @@
+@startuml
+abstract class TipoErro<<sealed>> {
+  codigoArquivo: Int
+  numeroLinha: Int
+  conteudoLinha: String
+  msg: String
+  tipoErroImportacaoEnum: TipoErroImportacaoEnum
+}
+
+class TipoErroC<<singleton>> {
++existeTipoErro(a: Seq[TipoErro]): Boolean
+}
+
+class Erro<<sealed case>> {
+  +Erro(codigoArquivo: Int, numeroLinha: Int, conteudoLinha: String, msg: String): Erro
+  +tipoErroImportacaoEnum: TipoErroImportacaoEnum
+}
+
+class Aviso<<sealed case>> {
+  +Aviso(codigoArquivo: Int, numeroLinha: Int, conteudoLinha: String, msg: String): Aviso
+  +tipoErroImportacaoEnum: TipoErroImportacaoEnum
+}
+
+TipoErro <.. TipoErroC : <<hasA>>
+TipoErro <|-- Erro
+TipoErro <|-- Aviso
+
+@enduml

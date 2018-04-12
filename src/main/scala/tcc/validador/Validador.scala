@@ -9,12 +9,6 @@ import scala.util.{Failure, Success, Try}
 
 abstract class Validador[A] {
 
-  private def linhaDiferenteDoControleArquivo: Regra = {
-    Regra(TipoErroImportacaoEnum.ERROR, "Tamanho da linha inválido"){
-      (arquivo: entidadeArquivo, dados) => dados.conteudoLinha.length != dados.controleArquivo.tamanhoLinha
-    }
-  }
-
   protected def gerarEntidadeArquivo(linha: String, metaDados: MetaDadosValidacao): entidadeArquivo
 
   protected def gerarEtapas(anoCompetencia: Int): Seq[Etapa]

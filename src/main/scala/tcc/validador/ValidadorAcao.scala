@@ -105,4 +105,4 @@ case class ArquivoAcao(
                         tipoAcao: String,
                         descricaoMeta: String,
                         unidadeMedida: String
-                      ) extends entidadeArquivo with unidadeGestoraRel
+                      ) extends entidadeArquivo with UnidadeGestoraRel
