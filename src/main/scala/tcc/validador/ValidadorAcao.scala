@@ -4,56 +4,7 @@ import sagres.model.{Acao, Acoes, TipoErroImportacaoEnum, TiposAcao}
 
 object ValidadorAcao extends Validador[Acao]{
 
-  object integridade {
 
-    val todas = List(
-      naoContemCodigoAcao,
-      codigoAcaoMenorQueQuatro,
-      denominacaoMenorQueDez
-    )
-
-    def naoContemCodigoAcao: Regra = Regra(TipoErroImportacaoEnum.ERROR, "Código da ação deve ser informado."){
-      (arquivo: ArquivoAcao, dados) => arquivo.codigoAcao.isEmpty
-    }
-
-    def codigoAcaoMenorQueQuatro: Regra = {
-      Regra(TipoErroImportacaoEnum.ERROR, "Código da ação não deve ser inferior a 4 caracteres."){
-        (arquivo: ArquivoAcao, dados) => arquivo.codigoAcao.length < 4
-      }
-    }
-
-    def denominacaoMenorQueDez: Regra = {
-      val minDescricao = 10
-      Regra(TipoErroImportacaoEnum.ERROR, s"Descrição da ação não deve ser inferior a $minDescricao caracteres"){
-        (arquivo: ArquivoAcao, dados) => arquivo.denominacaoAcao.length < minDescricao
-      }
-    }
-  }
-
-  object externo {
-
-    val todas = List(
-      existeAcao,
-      naoExisteTipoAcao
-    )
-
-    def existeAcao: Regra = {
-      Regra(TipoErroImportacaoEnum.ERROR, "Ação já cadastrada no sistema"){
-        (arquivo: ArquivoAcao, dados) => Acoes.findUnique(
-          arquivo.unidadeMedida,
-          arquivo.codigoAcao,
-          dados.dataCompetencia.toLocalDate.getYear
-        ).isDefined
-      }
-    }
-
-    def naoExisteTipoAcao: Regra = {
-      Regra(TipoErroImportacaoEnum.ERROR, "Código do tipo da ação inválida."){
-        (arquivo: ArquivoAcao, dados) => TiposAcao.findUnique(arquivo.tipoAcao).isEmpty
-      }
-    }
-
-  }
 
   override protected def gerarEntidadeArquivo(linha: String, metaDados: MetaDadosValidacao): ArquivoAcao = {
     val getCampo: String => String =  metaDados.controleArquivo.getCampo(linha, _)
@@ -78,7 +29,7 @@ object ValidadorAcao extends Validador[Acao]{
     )
   }
 
-  override protected def gerarEntidade(entidadeArquivo: entidadeArquivo, metaDadosValidacao: MetaDadosValidacao): Option[Acao] = {
+  override protected def gerarEntidade(entidadeArquivo: EntidadeArquivo, metaDadosValidacao: MetaDadosValidacao): Option[Acao] = {
     entidadeArquivo match {
       case entidadeArquivo: ArquivoAcao =>
         Option(
@@ -98,11 +49,4 @@ object ValidadorAcao extends Validador[Acao]{
   }
 }
 
-case class ArquivoAcao(
-                        codigoUnidadeGestora: String,
-                        codigoAcao: String,
-                        denominacaoAcao: String,
-                        tipoAcao: String,
-                        descricaoMeta: String,
-                        unidadeMedida: String
-                      ) extends entidadeArquivo with UnidadeGestoraRel
+
