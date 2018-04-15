@@ -1,5 +1,6 @@
 package tcc
 
+import java.io.File
 import java.nio.charset.Charset
 
 import sagres.model._
@@ -45,16 +46,15 @@ object Teste extends App {
 
     DateUtils.stringToSqlDate(nomeArquivo.substring(6, 12)) match {
 
-      case Some(dataCompetencia) =>
-        linhas.zipWithIndex.foldLeft( (List[TipoErro](), List[Acao]()) ) ( (tuplaListaErroEntidade, tupla) => {
+      case Some(dataCompetencia) => {
+        Validador.validarAcaoFromFile(new File("/home/maxranderson/dev_projects/tcc/src/main/resources/201095012018Acao.txt"), dataCompetencia, ugArquivo, controle).foreach {
+          case ResultadosErro(e) => println(s"Resultados com erro ${e.head}")
+          case ResultadosAviso(_, _) => println("Resultados com Aviso")
+          case ResultadosSucesso(_) => println("Resultados com Sucesso")
+        }
+      }
 
-          ValidadorAcao.validar(tupla._1, tupla._2 + 1, dataCompetencia, ugArquivo, controle) match {
-            case ResultadoErro(erros) => (erros ++: tuplaListaErroEntidade._1, tuplaListaErroEntidade._2)
-            case ResultadoAviso(erros, entidade) => (erros ++: tuplaListaErroEntidade._1, entidade +: tuplaListaErroEntidade._2)
-            case ResultadoSucesso(entidade) => (tuplaListaErroEntidade._1, entidade +: tuplaListaErroEntidade._2)
-          }
-        })
-      case None => (List[TipoErro](), List[Acao]())
+      case None => throw new Exception("Data não é válida")
 
     }
   }

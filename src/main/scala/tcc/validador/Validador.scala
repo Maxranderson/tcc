@@ -1,44 +1,31 @@
 package tcc.validador
 
+import java.io.File
 import java.sql.Date
 
-import sagres.model.{ControleArquivo, TipoErroImportacaoEnum}
-import sagres.model.TipoErroImportacaoEnum.TipoErroImportacaoEnum
-import tcc.validador.entidades.EntidadeArquivo
+import sagres.model.{Acao, ControleArquivo}
+import tcc.Metricas
+import tcc.validador.validadores.Validadores
+import tcc.validador.validadores.entidades.{Conversor, EntidadeArquivo}
 
+import scala.collection.parallel.ParSeq
+import scala.io.Source
 import scala.util.{Failure, Success, Try}
 
-abstract class Validador[A] {
+object Validador {
 
-  protected def gerarEntidadeArquivo(linha: String, metaDados: MetaDadosValidacao): EntidadeArquivo
-
-  protected def gerarEtapas(anoCompetencia: Int): Seq[Etapa]
-
-  protected def gerarEntidade(entidadeArquivo: EntidadeArquivo, metaDadosValidacao: MetaDadosValidacao): Option[A]
-
-  protected def processarEtapas(entidadeArquivo: EntidadeArquivo, dadosValidacao: MetaDadosValidacao, etapas: Seq[Etapa], errosAnteriores: Seq[TipoErro] = Seq[TipoErro]()): ResultadoValidacao[A] = {
-    etapas match {
-      case Nil => ResultadoValidacao(Option(errosAnteriores), gerarEntidade(entidadeArquivo, dadosValidacao))
-      case etapa :: proximas =>
-        val tryErros = etapa.processador(entidadeArquivo, dadosValidacao, etapa.regras)
-        if (tryErros.isFailure || tryErros.map(erros => TipoErro.existeTipoErro(erros)).getOrElse(true))
-          ResultadoValidacao(Some(errosAnteriores ++: erros), None)
-        else
-          processarEtapas(entidadeArquivo, dadosValidacao,proximas, errosAnteriores ++: erros)
-    }
+  def validarAcaoFromFile(file: File,
+                          dataCompetencia: Date,
+                          unidadeGestoraArquivo: String,
+                          controleArquivo: ControleArquivo): Try[ResultadosValidacao[Acao]] = {
+    Utils.validarFromFile(file, dataCompetencia, unidadeGestoraArquivo, controleArquivo, Validadores.validarAcao)
   }
 
-  protected def processoValidacao(linha: String, numeroLinha: Int, dataCompetencia: Date, unidadeGestoraArquivo: String, controleArquivo: ControleArquivo): ResultadoValidacao[A] = {
-    val metaDados = MetaDadosValidacao(linha, numeroLinha, dataCompetencia, unidadeGestoraArquivo, controleArquivo)
-    processarEtapas(gerarEntidadeArquivo(linha, metaDados), metaDados,Etapa(List(linhaDiferenteDoControleArquivo)) +: gerarEtapas(controleArquivo.ano), Seq[TipoErro]())
-  }
-
-  final def validar: (String, Int, Date, String, ControleArquivo) => ResultadoValidacao[A] = processoValidacao
 }
 
-final case class MetaDadosValidacao(conteudoLinha: String, numeroLinha: Int, dataCompetencia: Date, unidadeGestoraArquivo: String, controleArquivo: ControleArquivo)
+final case class MetaDados(conteudoLinha: String, numeroLinha: Int, dataCompetencia: Date, unidadeGestoraArquivo: String, controleArquivo: ControleArquivo)
 
-package object Utils {
+protected[validador] object Utils {
   def castEntidadeTrait[T](entidade: EntidadeArquivo)(code: (T) => Try[Option[TipoErro]]): Try[Option[TipoErro]] = {
     entidade match {
       case e: EntidadeArquivo with T => code(e)
@@ -46,7 +33,36 @@ package object Utils {
     }
   }
 
-//  def processarEtapaParalelo(entidadeArquivo: entidadeArquivo, dadosValidacao: MetaDadosValidacao, etapa: Seq[Regra]): Try[Seq[TipoErro]] = {
-//    etapa.par.flatMap(regra => regra.validar(entidadeArquivo, dadosValidacao)).toVector
-//  }
+  def processarLinhasSequencial[A](tuplasLinhaIndice: Seq[(String, Int)], metaDadosSemLinha: MetaDados, gerarTuplaProcessadorEtapas: (MetaDados) => Try[(Conversor[A], Seq[Etapa])]): Try[ResultadosValidacao[A]] = {
+    val tryTuplaProcessadorEtapas = gerarTuplaProcessadorEtapas(metaDadosSemLinha)
+    def loop(linhasAhProcessar: Seq[(String, Int)], acumulador: (Seq[TipoErro], Option[Seq[A]]) = (Seq(), Option(Seq()))): Try[ResultadosValidacao[A]] = {
+      linhasAhProcessar match {
+        case Nil => Success(ResultadosValidacao(acumulador._1, acumulador._2))
+        case tuplaLinhaIndice :: proximas =>
+          val metaDados = metaDadosSemLinha.copy(conteudoLinha = tuplaLinhaIndice._1, numeroLinha = tuplaLinhaIndice._2+1)
+          tryTuplaProcessadorEtapas match {
+            case Failure(e) => Failure(e)
+            case Success(tuplaProcessadorEtapas) =>
+              Etapa.processadores.processarEtapasSequencial(metaDados, tuplaProcessadorEtapas._1.fromFileLine(metaDados), tuplaProcessadorEtapas._1.entidadeArquivoParaEntidade, tuplaProcessadorEtapas._2.toList) match {
+                case Failure(e) => Failure(e)
+                case Success(resultados) => {
+                  loop(proximas, (acumulador._1 ++ resultados._1,
+                    acumulador._2.map{
+                      seq => resultados._2 match {
+                        case None => seq
+                        case Some(entidade) => entidade +: seq
+                      }
+                    }
+                  ))
+                }
+              }
+          }
+      }
+    }
+    loop(tuplasLinhaIndice)
+  }
+
+  def validarFromFile[A](file: File, dataCompetencia: Date, unidadeGestoraArquivo: String, controleArquivo: ControleArquivo, gerarTuplaProcessadorEtapas: (MetaDados) => Try[(Conversor[A], Seq[Etapa])]): Try[ResultadosValidacao[A]] = {
+    Utils.processarLinhasSequencial(Source.fromFile(file, "UTF-8").getLines().toList.zipWithIndex, MetaDados("", 0, dataCompetencia, unidadeGestoraArquivo, controleArquivo), gerarTuplaProcessadorEtapas)
+  }
 }

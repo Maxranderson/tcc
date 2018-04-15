@@ -3,7 +3,7 @@ package tcc.validador
 import sagres.model.TipoErroImportacaoEnum
 import sagres.model.TipoErroImportacaoEnum.TipoErroImportacaoEnum
 
-sealed abstract class TipoErro {
+protected[validador] sealed abstract class TipoErro {
   val codigoArquivo: Int
   val numeroLinha: Int
   val conteudoLinha: String
@@ -11,7 +11,7 @@ sealed abstract class TipoErro {
   val tipoErroImportacaoEnum: TipoErroImportacaoEnum
 }
 
-object TipoErro {
+protected[validador] object TipoErro {
 
   def existeTipoErro(lista: Seq[TipoErro]): Boolean = lista match {
     case Nil => false
@@ -29,10 +29,10 @@ object TipoErro {
   }
 }
 
-sealed case class Erro(codigoArquivo: Int, numeroLinha: Int, conteudoLinha: String, msg: String) extends TipoErro {
+protected[validador] sealed case class Erro(codigoArquivo: Int, numeroLinha: Int, conteudoLinha: String, msg: String) extends TipoErro {
   val tipoErroImportacaoEnum: TipoErroImportacaoEnum = TipoErroImportacaoEnum.ERROR
 }
 
-sealed case class Aviso(codigoArquivo: Int, numeroLinha: Int, conteudoLinha: String, msg: String) extends TipoErro {
+protected[validador] sealed case class Aviso(codigoArquivo: Int, numeroLinha: Int, conteudoLinha: String, msg: String) extends TipoErro {
   val tipoErroImportacaoEnum: TipoErroImportacaoEnum = TipoErroImportacaoEnum.WARNING
 }
