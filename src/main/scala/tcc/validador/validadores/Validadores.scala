@@ -10,16 +10,16 @@ import scala.util.Try
 protected[validador] object Validadores {
 
   def validarAcao(metaDados: MetaDados): Try[(Conversor[Acao], Seq[Etapa])] = {
-    Processadores.processarPartialFunctions(metaDados, List(default))
+    Processadores.processarPartialFunctions(metaDados, Seq(default))
   }
 
   val default: PartialFunction[MetaDados, (Conversor[Acao], Seq[Etapa])] = {
     case meta =>
       (
         ArquivoAcao,
-        List(
-          Etapa(List(SubEtapa( RegrasUnidadeGestoraRel.integridade.todas ++: RegrasAcao.integridade.todas ))),
-          Etapa(List(SubEtapa( RegrasUnidadeGestoraRel.externo.todas ++: RegrasAcao.externo.todas )))
+        Seq(
+          Etapa(Seq(SubEtapa( RegrasUnidadeGestoraRel.integridade.todas ++: RegrasAcao.integridade.todas ))),
+          Etapa(Seq(SubEtapa( RegrasUnidadeGestoraRel.externo.todas ++: RegrasAcao.externo.todas )))
         )
       )
   }

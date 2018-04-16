@@ -16,13 +16,14 @@ object Teste extends App {
   val nomeArquivo = "201095012018Acao.txt"
   val ugArquivo = nomeArquivo.substring(0, 6)
   implicit val codec: Codec = Codec(Charset.forName("UTF-8"))
-  val linhas = Source.fromResource("201095012018Acao.txt").getLines().toList
+  val arquivo = Source.fromResource("201095012018Acao.txt")
   implicit val controle: ControleArquivo = ControleArquivo(None, 10, 2018, "Acao", 287, ativo = true, 0, 2, None)
   implicit val erros: ImportacaoException = ImportacaoException("Falha na importação", erroImportacaoBase = ErroImportacao(None, "201095", 2018, 1, None, 1, None, None, None, None, None))
 
   val dataCompetenciaArquivo = DateUtils.stringToSqlDate(nomeArquivo.substring(6, 12)).orNull
   val resultadoOO = Metricas.tempoExecucaoComResultado {
     val acoes = ListBuffer[Option[Acao]]()
+    val linhas = arquivo.getLines().toList
 
     if(dataCompetenciaArquivo == null){
 
@@ -42,12 +43,13 @@ object Teste extends App {
     }
   }
 
+  val arquivoParaRotina = new File("/home/maxranderson/dev_projects/tcc/src/main/resources/201095012018Acao.txt")
   val resultFuncional = Metricas.tempoExecucaoComResultado {
 
     DateUtils.stringToSqlDate(nomeArquivo.substring(6, 12)) match {
 
       case Some(dataCompetencia) => {
-        Validador.validarAcaoFromFile(new File("/home/maxranderson/dev_projects/tcc/src/main/resources/201095012018Acao.txt"), dataCompetencia, ugArquivo, controle).foreach {
+        Validador.validarAcaoFromFile(arquivoParaRotina, dataCompetencia, ugArquivo, controle).foreach {
           case ResultadosErro(e) => println(s"Resultados com erro ${e.head}")
           case ResultadosAviso(_, _) => println("Resultados com Aviso")
           case ResultadosSucesso(_) => println("Resultados com Sucesso")

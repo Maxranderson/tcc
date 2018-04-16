@@ -11,7 +11,7 @@ protected[validadores]object RegrasUnidadeGestoraRel {
 
   object integridade {
 
-    val todas = List(
+    val todas = Seq(
       naoPertenceAoMuncipio,
       naoEhPrefeituraEhUgDiferenteArquivo,
       naoContemUnidadeGestora
@@ -44,7 +44,7 @@ protected[validadores]object RegrasUnidadeGestoraRel {
 
   object externo {
 
-    val todas = List(
+    val todas = Seq(
       naoExisteEssaUnidadeGestora
     )
 

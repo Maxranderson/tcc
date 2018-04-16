@@ -9,7 +9,7 @@ import scala.util.Try
 protected[validadores] object RegrasAcao {
   object integridade {
 
-    val todas = List(
+    val todas = Seq(
       naoContemCodigoAcao,
       codigoAcaoMenorQueQuatro,
       denominacaoMenorQueDez,
@@ -46,7 +46,7 @@ protected[validadores] object RegrasAcao {
 
   object externo {
 
-    val todas = List(
+    val todas = Seq(
       existeAcao,
       naoExisteTipoAcao
     )
