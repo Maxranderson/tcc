@@ -11,8 +11,15 @@ protected[validador] case class Regra(validar: (EntidadeArquivo, MetaDados) => T
 protected[validador] object Regra {
   def apply[T](tipo: TipoErroImportacaoEnum, mensagem: String)(decisao: (T, MetaDados) => Try[Boolean]): Regra = new Regra(fazerRegra(tipo, mensagem)(decisao))
 
+  def castEntidadeTrait[T](entidade: EntidadeArquivo)(code: (T) => Try[Option[TipoErro]]): Try[Option[TipoErro]] = {
+    entidade match {
+      case e: T => code(e)
+      case _ => Failure(new Exception("Não foi possivel fazer o cast da entidade"))
+    }
+  }
+
   def fazerRegra[T](tipo: TipoErroImportacaoEnum, mensagem: String)(decisao: (T, MetaDados) => Try[Boolean])(entidadeArquivo: EntidadeArquivo, dadosValidacao: MetaDados): Try[Option[TipoErro]] = {
-    Utils.castEntidadeTrait[T](entidadeArquivo) { entidadeArquivo =>
+    castEntidadeTrait[T](entidadeArquivo) { entidadeArquivo =>
       decisao(entidadeArquivo, dadosValidacao).map {
         decisao => {
           if(decisao){

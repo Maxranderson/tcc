@@ -3,36 +3,19 @@ package tcc.validador
 import sagres.model.TipoErroImportacaoEnum
 import sagres.model.TipoErroImportacaoEnum.TipoErroImportacaoEnum
 
-protected[validador] sealed abstract class TipoErro {
-  val codigoArquivo: Int
-  val numeroLinha: Int
-  val conteudoLinha: String
-  val msg: String
-  val tipoErroImportacaoEnum: TipoErroImportacaoEnum
-}
+protected[validador] sealed case class TipoErro(codigoArquivo: Int, numeroLinha: Int, conteudoLinha: String, msg: String, tipoErroImportacaoEnum: TipoErroImportacaoEnum)
 
 protected[validador] object TipoErro {
 
   def existeTipoErro(lista: Seq[TipoErro]): Boolean = lista match {
     case Nil => false
     case head :: tail => head match {
-      case _: Erro => true
+      case erro if erro.tipoErroImportacaoEnum.equals(TipoErroImportacaoEnum.ERROR) => true
       case _ => existeTipoErro(tail)
     }
   }
 
-  def apply(codigoArquivo: Int, numeroLinha: Int, conteudoLinha: String, msg: String, tipoErroImportacaoEnum: TipoErroImportacaoEnum): TipoErro = {
-    tipoErroImportacaoEnum match {
-      case TipoErroImportacaoEnum.ERROR => Erro(codigoArquivo, numeroLinha, conteudoLinha, msg)
-      case TipoErroImportacaoEnum.WARNING => Aviso(codigoArquivo, numeroLinha, conteudoLinha, msg)
-    }
+  def isError(erro: TipoErro): Boolean = {
+    erro.tipoErroImportacaoEnum.equals(TipoErroImportacaoEnum.ERROR)
   }
-}
-
-protected[validador] sealed case class Erro(codigoArquivo: Int, numeroLinha: Int, conteudoLinha: String, msg: String) extends TipoErro {
-  val tipoErroImportacaoEnum: TipoErroImportacaoEnum = TipoErroImportacaoEnum.ERROR
-}
-
-protected[validador] sealed case class Aviso(codigoArquivo: Int, numeroLinha: Int, conteudoLinha: String, msg: String) extends TipoErro {
-  val tipoErroImportacaoEnum: TipoErroImportacaoEnum = TipoErroImportacaoEnum.WARNING
 }
