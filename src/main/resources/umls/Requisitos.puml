@@ -1,0 +1,18 @@
+@startuml
+card "Análise e Elicitação de Requisitos" as a
+card "Especificação dos Requisitos" as b
+card "Validação dos Requisitos" as c
+storage "Descrição dos Sistema" as d
+storage "Requisitos do Sistema e Usuário" as e
+storage "Documento de Requisitos" as f
+a --> d
+a --> b
+b --> a
+b --> c
+c --> b
+b --> e
+e --> f
+d --> f
+c --> f
+
+@enduml

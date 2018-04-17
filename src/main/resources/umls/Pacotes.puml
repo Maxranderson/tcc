@@ -1,0 +1,12 @@
+@startuml
+
+package validador {
+
+    package validadores {
+
+        package entidades
+
+        package regras
+    }
+}
+@enduml

@@ -1,11 +1,23 @@
 @startuml
 
-
-abstract class Validador[A] {
-#<<final>> processar(a: EntidadeArquivo, b: MetaDados, c: Seq[Etapa]): Try[(Seq[TipoErro], A)]
-+<<final>> validar(a: EntidadeArquivo, b: MetaDados): Try[(Seq[TipoErro], A)]
+class Rotina<<T, #>> {
+}
+class Validador<<singleton>> {
 }
 
+
+class Etapa <<case>>{
+    +Etapa(subEtapas: Seq[SubEtapa])
+}
+
+class SubEtapa <<case>>{
+    +SubEtapa(regras: Seq[Regra])
+}
+
+class Regra
+
+class Processadores
+class MetaDados
 
 
 @enduml

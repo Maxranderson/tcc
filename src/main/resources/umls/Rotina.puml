@@ -1,0 +1,21 @@
+@startuml
+:Receber dados;
+fork
+    :Processar arquivo;
+    :Converter arquivo para linhas;
+    :Processar linhas;
+    while(temLinha?) is (têm)
+        if(tamanhoCorreto?)
+        else
+            :retornarErro;
+        endif
+    endWhile (acabou)
+fork again
+    :Processar JSONs;
+    while(temJson?) is (têm)
+        :Converter JSON para entidade;
+    endWhile (acabou)
+
+endfork
+stop
+@enduml

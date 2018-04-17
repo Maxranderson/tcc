@@ -1,0 +1,20 @@
+@startuml
+class ResultadosValidacao<A><<trait>><<T, #007D29>>
+
+class ResultadosErro<A><<case>> {
+erros: Seq[TipoErro]
+}
+
+class ResultadosAviso<A><<case>> {
+erros: Seq[TipoErro]
+entidades: Seq[A]
+}
+
+class ResultadosSucesso<A><<case>> {
+entidades: Seq[A]
+}
+
+ResultadosValidacao <|-- ResultadosErro
+ResultadosValidacao <|-- ResultadosAviso
+ResultadosValidacao <|-- ResultadosSucesso
+@enduml
