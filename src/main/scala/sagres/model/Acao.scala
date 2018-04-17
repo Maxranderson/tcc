@@ -29,6 +29,7 @@ case class Acao (id:Option[Long],
 
 object Acoes {
   def findUnique(unidadeGestora: String, codigoAcao: String, ano: Int): Option[Acao] = {
+//    Thread.sleep(0, 500000)
     None
   }
 }
