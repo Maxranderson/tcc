@@ -1,7 +1,7 @@
 package tcc.validador.validadores.regras
 
 import sagres.model.{Acoes, TipoErroImportacaoEnum, TiposAcao}
-import tcc.validador.Regra
+import tcc.validador.{MetaDados, Regra}
 import tcc.validador.validadores.entidades.ArquivoAcao
 
 import scala.util.Try
@@ -10,15 +10,17 @@ protected[validadores] object RegrasAcao {
   object integridade {
 
     val todas = Seq(
-      naoContemCodigoAcao,
+      regraNaoContemCodigoAcao,
       codigoAcaoMenorQueQuatro,
       denominacaoMenorQueDez,
       ehPrefeituraEhExcluida
     )
 
-    def naoContemCodigoAcao: Regra = Regra(TipoErroImportacaoEnum.ERROR, "Código da ação deve ser informado."){
-      (arquivo: ArquivoAcao, dados) => Try(arquivo.codigoAcao.isEmpty)
+    def naoContemCodigoAcao(arquivoAcao: ArquivoAcao, metaDados: MetaDados) = Try {
+      arquivoAcao.codigoAcao.isEmpty
     }
+
+    def regraNaoContemCodigoAcao: Regra = Regra(TipoErroImportacaoEnum.ERROR, "Código da ação deve ser informado.")(naoContemCodigoAcao)
 
     def codigoAcaoMenorQueQuatro: Regra = {
       Regra(TipoErroImportacaoEnum.ERROR, "Código da ação não deve ser inferior a 4 caracteres."){
