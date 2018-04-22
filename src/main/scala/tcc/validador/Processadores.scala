@@ -95,16 +95,21 @@ object Processadores {
     loop(subEtapa.regras)
   }
 
-  def processarSubEtapa(subEtapa: SubEtapa, entidadeArquivo: EntidadeArquivo, metaDados: MetaDados): Try[( Boolean, Seq[TipoErro])] = Try {
-    var contemErro = false
-    val resultado = subEtapa.regras.flatMap(_.validar(entidadeArquivo, metaDados) match {
-      case Failure(e) => throw e
-      case Success(oe) => {
-        if(!contemErro) contemErro = oe.exists(_.tipoErroImportacaoEnum == TipoErroImportacaoEnum.ERROR)
-        oe
-      }
-    })
-    (contemErro, resultado)
+  def processarSubEtapa(subEtapa: SubEtapa, entidadeArquivo: EntidadeArquivo, metaDados: MetaDados): Try[( Boolean, Seq[TipoErro])] = {
+    subEtapa.regras.foldLeft(Try((false, Seq.empty[TipoErro]))){
+      (acumulador, regra) =>
+        acumulador.flatMap(
+          tuplaBoolOpErros =>
+            regra.validar(entidadeArquivo, metaDados)
+              .map(opErro => {
+                  val (comErro, erros) = tuplaBoolOpErros
+                  opErro match {
+                    case Some(erro) =>( opErro.exists(TipoErro.isError) || comErro, opErro.get +: erros)
+                    case None => (comErro, erros)
+                  }
+                })
+        )
+    }
   }
 
   def processarEtapaSequencial(etapa: Etapa, entidadeArquivo: EntidadeArquivo, metaDados: MetaDados): Try[(Boolean, Seq[TipoErro])] = {
