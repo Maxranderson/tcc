@@ -144,8 +144,4 @@ object Processadores {
     }
   }
 
-
-  case class ExisteErroValidacaoException(erros: Seq[TipoErro]) extends Exception
-
-
 }
