@@ -1,3 +1,21 @@
 @startuml
 
+
+start
+while(etapa a processar?) is (sim)
+    :processar Etapa;
+    while(SubEtapa a processar?) is (sim)
+        :processar SubEtapa;
+        :processar Regras;
+    endwhile (não)
+    if(etapa com erros?) then (sim)
+        :retornar erros;
+        stop
+        break
+    else (não)
+    endif
+endwhile (não)
+:retornar resultados;
+stop
+
 @enduml

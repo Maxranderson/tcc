@@ -3,19 +3,21 @@ package tcc.validador
 import sagres.model.TipoErroImportacaoEnum
 import tcc.validador.validadores.entidades.{Conversor, EntidadeArquivo}
 
+import scala.annotation.tailrec
 import scala.util.{Failure, Success, Try}
 
 object Processadores {
 
-  def processarLinhasSequencial[A](tuplasLinhaIndice: Seq[(String, Int)], metaDadosSemLinha: MetaDados, gerarTuplaProcessadorEtapas: (MetaDados) => Try[(Conversor[A], Seq[Etapa])]): Try[ResultadosValidacao[A]] = {
+  def processarLinhasSequencial[A](tuplasLinhaIndice: Seq[(String, Int)],
+                                   metaDadosSemLinha: MetaDados,
+                                   gerarTuplaProcessadorEtapas: (MetaDados) => Try[(Conversor[A], Seq[Etapa])]): Try[ResultadosValidacao[A]] = {
     val tuplaProcessadorEtapas = gerarTuplaProcessadorEtapas(metaDadosSemLinha) match {
       case Failure(e) => throw e
       case Success(s) => s
     }
-
     val conversor = tuplaProcessadorEtapas._1
     val etapas = tuplaProcessadorEtapas._2
-
+    @tailrec
     def loop(linhasAhProcessar: Seq[(String, Int)], acumulador: (Seq[TipoErro], Option[Seq[A]]) = (Seq(), Option(Seq()))): Try[ResultadosValidacao[A]] = {
       linhasAhProcessar match {
         case Nil => Success(ResultadosValidacao(acumulador._1, acumulador._2))
@@ -66,27 +68,13 @@ object Processadores {
       }else {
         (Seq(TipoErro(metaDados.controleArquivo.codigoArquivo, numeroLinha, linha, "Tamanho da linha inválida", TipoErroImportacaoEnum.ERROR)), None)
       }
-    }).foldLeft((Seq[TipoErro](), Option[Seq[A]](Seq())))((atual, proximo) => (atual._1 ++: proximo._1,
+    }).foldLeft((Seq.empty[TipoErro], Option(Seq.empty[A])))((atual, proximo) => (atual._1 ++: proximo._1,
       (atual._2, proximo._2) match {
         case (Some(a), Some(b)) => Option(b +: a)
         case _ => None
       }
     ))
     ResultadosValidacao(result._1, result._2)
-  }
-
-  def processarPartialFunctions[A](metaDados: MetaDados, seq: Seq[PartialFunction[MetaDados, (Conversor[A], Seq[Etapa])]]): Try[(Conversor[A], Seq[Etapa])] = {
-    def loop(ahProcessar: Seq[PartialFunction[MetaDados, (Conversor[A], Seq[Etapa])]]): Try[(Conversor[A], Seq[Etapa])] = {
-      ahProcessar match {
-        case Nil => Failure(new Exception("O parâmetros não corresponderam a nenhuma função"))
-        case atual :: proximas =>
-          Try(atual(metaDados)) match {
-            case Failure(_) => loop(proximas)
-            case Success(result) => Success(result)
-          }
-      }
-    }
-    loop(seq)
   }
 
   def processarSubEtapaSequencial(subEtapa: SubEtapa, entidadeArquivo: EntidadeArquivo, metaDados: MetaDados): Try[Seq[TipoErro]] = {

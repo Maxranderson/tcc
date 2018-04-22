@@ -9,11 +9,11 @@ import scala.util.Try
 
 protected[validador] object Validadores {
 
-  def validarAcao(metaDados: MetaDados): Try[(Conversor[Acao], Seq[Etapa])] = {
-    Processadores.processarPartialFunctions(metaDados, Seq(default))
+  def validarAcao(metaDados: MetaDados): Try[(Conversor[Acao], Seq[Etapa])] = Try {
+    default(metaDados)
   }
 
-  val default: PartialFunction[MetaDados, (Conversor[Acao], Seq[Etapa])] = {
+  private val default: PartialFunction[MetaDados, (Conversor[Acao], Seq[Etapa])] = {
     case meta =>
       (
         ArquivoAcao,
