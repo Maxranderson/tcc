@@ -1,0 +1,16 @@
+@startuml
+left to right direction
+card "Especificação" as a
+card "Desenvolvimento" as b
+card "Validação" as c
+card "Início" as start
+card "Testes e métricas" as d
+start --> a
+a --> c
+c --> a
+a --> b
+b --> c
+c --> b
+b --> d
+
+@enduml
