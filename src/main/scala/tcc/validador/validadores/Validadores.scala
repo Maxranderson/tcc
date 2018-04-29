@@ -9,18 +9,17 @@ import scala.util.Try
 
 protected[validador] object Validadores {
 
-  def validarAcao(metaDados: MetaDados): Try[(Conversor[Acao], Seq[Etapa])] = Try {
-    default(metaDados)
-  }
-
-  private val default: PartialFunction[MetaDados, (Conversor[Acao], Seq[Etapa])] = {
-    case meta =>
-      (
-        ArquivoAcao,
-        Seq(
-          Etapa(Seq(SubEtapa( RegrasUnidadeGestoraRel.integridade.todas ++: RegrasAcao.integridade.todas ))),
-          Etapa(Seq(SubEtapa( RegrasUnidadeGestoraRel.externo.todas ++: RegrasAcao.externo.todas )))
+  def validarAcao(metaDados: MetaDados): Try[(Conversor[Acao], Seq[Etapa])] = {
+    val default: PartialFunction[MetaDados, (Conversor[Acao], Seq[Etapa])] = {
+      case meta =>
+        (
+          ArquivoAcao,
+          Seq(
+            Etapa(Seq(SubEtapa( RegrasUnidadeGestoraRel.integridade.todas ++: RegrasAcao.integridade.todas ))),
+            Etapa(Seq(SubEtapa( RegrasUnidadeGestoraRel.externo.todas ++: RegrasAcao.externo.todas )))
+          )
         )
-      )
+    }
+    Try(default(metaDados))
   }
 }

@@ -103,10 +103,7 @@ object Processadores {
             regra.validar(entidadeArquivo, metaDados)
               .map(opErro => {
                   val (comErro, erros) = tuplaBoolOpErros
-                  opErro match {
-                    case Some(erro) =>( opErro.exists(TipoErro.isError) || comErro, opErro.get +: erros)
-                    case None => (comErro, erros)
-                  }
+                  opErro.map(err => (TipoErro.isError(err) || comErro, err +: erros)).getOrElse((comErro, erros))
                 })
         )
     }
