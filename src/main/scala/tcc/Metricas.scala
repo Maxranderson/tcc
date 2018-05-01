@@ -20,21 +20,21 @@ object Metricas {
   }
 
   def tempoExecucaoPorArquivoEhQuantidadeLinha[R](bloco: (File) => R): String = {
-    val quantidade = 1 to 15
-    val arquivos = quantidade.map(vez => new File(s"src/main/resources/arquivos-testes/vezes$vez.txt"))
+    val numerosArquivos = 1 to 15
+    val arquivos = numerosArquivos.map(numero => (numero, new File(s"src/main/resources/arquivos-testes/vezes$numero.txt")))
     val resultados = arquivos.map {
-      arquivo =>
-        Metricas.tempoExecucaoComResultados {
+      tuplaNumeroArquivo =>
+        val (numero, arquivo) = tuplaNumeroArquivo
+        (Metricas.tempoExecucaoComResultados {
           bloco(arquivo)
-        }
+        }, numero)
     }
-
-    val resultadosPorLinha = resultados.zipWithIndex.foldLeft("") {
+    val resultadosPorLinha = resultados.foldLeft("") {
       (acumulador, proximo) =>
-        val ((res, tempo), indice) = proximo
-        acumulador + "\n" + s"Resultado de ${(indice + 1) * 400} linhas: $tempo ms"
+        val ((res, tempo), numero) = proximo
+        acumulador + "\n" + s"Resultado de ${numero * 400} linhas: $tempo ms"
     }
-   resultadosPorLinha + "\n" + s"A média foi: ${resultados.foldLeft(0.toDouble)(_ + _._2) / resultados.length} ms"
+    resultadosPorLinha + "\n" + s"O tempo total foi: ${resultados.foldLeft(0.toLong)(_ + _._1._2)} ms"
   }
 
 }
