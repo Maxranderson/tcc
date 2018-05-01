@@ -7,8 +7,7 @@ import tcc.validador._
 
 import scala.io.{Codec, Source}
 
-object RotinaFuncionalTeste extends App {
-
+object RotinaFuncionalParaleloTeste extends App {
   val nomeArquivo = "201095012018Acao.txt"
   val ugArquivo = nomeArquivo.substring(0, 6)
   implicit val codec: Codec = Codec(Charset.forName("UTF-8"))
@@ -24,18 +23,15 @@ object RotinaFuncionalTeste extends App {
 
   println {
     Metricas.tempoExecucaoPorArquivoEhQuantidadeLinha {
-      arquivo => Validador.validarAcaoFromFile(arquivo, dataCompetenciaArquivo, ugArquivo, controle).foreach {
+      arquivo => Validador.validarAcaoFromFileParalelo(arquivo, dataCompetenciaArquivo, ugArquivo, controle).foreach {
         case ResultadosErro(erros) =>
-          println(erros.foldLeft("")((acumulador, entidade) => s"$acumulador\n$entidade" ))
           erros.foreach(adicionarErroAhExcecao)
           Seq.empty
         case ResultadosAviso(erros, entidades) =>
           erros.foreach(adicionarErroAhExcecao)
           entidades
-        case ResultadosSucesso(entidades) =>
-          entidades
+        case ResultadosSucesso(entidades) => entidades
       }
     }
   }
-
 }

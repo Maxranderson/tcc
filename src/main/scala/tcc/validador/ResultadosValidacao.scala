@@ -1,6 +1,6 @@
 package tcc.validador
 
-protected[validador] sealed trait ResultadosValidacao[A]
+sealed trait ResultadosValidacao[A]
 
 sealed case class ResultadosErro[A](erros: Seq[TipoErro]) extends ResultadosValidacao[A]
 

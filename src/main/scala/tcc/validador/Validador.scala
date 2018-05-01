@@ -16,5 +16,12 @@ object Validador extends Rotina{
     validarFromFile(file, dataCompetencia, unidadeGestoraArquivo, controleArquivo, Validadores.validarAcao)
   }
 
+  def validarAcaoFromFileParalelo(file: File,
+                          dataCompetencia: Date,
+                          unidadeGestoraArquivo: String,
+                          controleArquivo: ControleArquivo): Try[ResultadosValidacao[Acao]] = {
+    validarFromFileParalelo(file, dataCompetencia, unidadeGestoraArquivo, controleArquivo, Validadores.validarAcao)
+  }
+
 }
 

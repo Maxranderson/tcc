@@ -3,7 +3,7 @@ package tcc.validador
 import sagres.model.TipoErroImportacaoEnum
 import sagres.model.TipoErroImportacaoEnum.TipoErroImportacaoEnum
 
-protected[validador] sealed case class TipoErro(codigoArquivo: Int, numeroLinha: Int, conteudoLinha: String, msg: String, tipoErroImportacaoEnum: TipoErroImportacaoEnum)
+sealed case class TipoErro(codigoArquivo: Int, numeroLinha: Int, conteudoLinha: String, msg: String, tipoErroImportacaoEnum: TipoErroImportacaoEnum)
 
 protected[validador] object TipoErro {
 
