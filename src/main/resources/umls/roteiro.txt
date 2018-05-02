@@ -1,0 +1,99 @@
+O que mostrar do código?
+    - Como vai acontecer o processamento e como era antes
+    - Como o desenvolvedor vai definir as etapas e o objeto a ser validado
+    - Como vão ser os objetos
+    - Como vão ser definidas as regras, comparar com antes
+
+
+
+def processarLinhasSequencial[A](tuplasLinhaIndice: Seq[(String, Int)],
+                                   metaDadosSemLinha: MetaDados,
+                                   gerarTuplaProcessadorEtapas: (MetaDados) => Try[(Conversor[A], Seq[Etapa])]
+                                   ): Try[ResultadosValidacao[A]] = {
+    /* Código omitido */
+    @tailrec
+    def loop(linhasAhProcessar: Seq[(String, Int)],
+               acumulador: (Seq[TipoErro], Option[Seq[A]]) = (Seq(), Option(Seq()))
+            ): Try[ResultadosValidacao[A]] = {
+      linhasAhProcessar match {
+        case Nil => /* Código omitido */
+        case tuplaLinhaIndice :: proximas =>
+          /* Codigo omitido */
+      }
+    }
+    loop(tuplasLinhaIndice)
+  }
+
+    val acoes = ListBuffer[Option[Acao]]()
+    val linhas = arquivo.getLines().toList
+    /* Código omitido */
+      for (i <- linhas.indices.toList) {
+        val line = linhas(i)
+        val acao = new AcaoFileLineValidator(/* Código omitido */).getEntidade(/* Código omitido */)
+        if(acao.isDefined) acoes += acao
+      }
+    /* Código omitido */
+
+
+    def processarLinhasParalelo[A](/* Código omitido */): Try[ResultadosValidacao[A]] = Try {
+       /* Código omitido */
+        val result: (Seq[TipoErro], Option[Seq[A]]) = tuplasLinhaIndice.par.map(linhaIndice => {
+          /* Código omitido */
+        }).foldLeft(/* Variável acumuladora */)(/*Função de iteração*/)
+        /* Código omitido */
+      }
+
+  protected[validador] object Validadores {
+    def validarAcao(metaDados: MetaDados): Try[(Conversor[Acao], Seq[Etapa])] = Try {
+      val default: PartialFunction[MetaDados, (Conversor[Acao], Seq[Etapa])] = {
+        case meta =>
+          (
+            ArquivoAcao,
+            Seq(
+              Etapa(Seq(SubEtapa(/* Regras */))),
+              Etapa(Seq(SubEtapa(/* Regras */)))
+            )
+          )
+      }
+      default(metaDados)
+    }
+  }
+
+  protected[validadores] object RegrasAcao {
+    object integridade {
+      /* Código omitido */
+      def naoContemCodigoAcao(arquivoAcao: ArquivoAcao, metaDados: MetaDados) = Try {
+        arquivoAcao.codigoAcao.isEmpty
+      }
+
+      def regraNaoContemCodigoAcao: Regra = Regra(TipoErroImportacaoEnum.ERROR, "Código da ação deve ser informado.")(naoContemCodigoAcao)
+
+      def codigoAcaoMenorQueQuatro: Regra = {
+        Regra(TipoErroImportacaoEnum.ERROR, "Código da ação não deve ser inferior a 4 caracteres."){
+          (arquivo: ArquivoAcao, dados) => Try(arquivo.codigoAcao.length < 4)
+        }
+      }
+      /* Código omitido */
+    }
+    /* Código omitido */
+  }
+
+    def apply[T](/* Código omitido */)(/* Código omitido */): Regra = new Regra(fazerRegra(tipo, mensagem)(decisao))
+
+    def fazerRegra[T <: EntidadeArquivo](/* Código omitido */)(/* Código omitido */)(/* Código omitido */): Try[Option[TipoErro]] = {
+      decisao(entidadeArquivo.asInstanceOf[T], dadosValidacao).map {
+        decisao => {
+          if(decisao){
+            Option(
+              TipoErro(
+                dadosValidacao.controleArquivo.codigoArquivo,
+                dadosValidacao.numeroLinha,
+                dadosValidacao.conteudoLinha,
+                mensagem,
+                tipo
+              )
+            )
+          }else None
+        }
+      }
+    }

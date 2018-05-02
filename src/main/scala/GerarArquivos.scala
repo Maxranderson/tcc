@@ -16,13 +16,14 @@ object GerarArquivos extends App {
   }
 
   def modificarCodigoAcao(lista: Seq[String]): Seq[String] = {
-    lista.zipWithIndex.map(tuplaLinhaIndice => {
-      val (linha, indice) = tuplaLinhaIndice
-      val ug = linha.substring(0,6)
-      val codAcao = linha.substring(6,10)
-      val resto = linha.substring(10, linha.length)
-      s"$ug${preencherComZero(indice.toString, 4)}$resto"
-    })
+//    lista.zipWithIndex.map(tuplaLinhaIndice => {
+//      val (linha, indice) = tuplaLinhaIndice
+//      val ug = linha.substring(0,6)
+//      val codAcao = linha.substring(6,10)
+//      val resto = linha.substring(10, linha.length)
+//      s"$ug${preencherComZero((indice+1).toString, 4)}$resto"
+//    })
+    lista
   }
 
   def preencherComZero(campo: String, quantidade: Int): String = {

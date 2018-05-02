@@ -1,6 +1,7 @@
 package tcc.validador
 
-import sagres.model.TipoErroImportacaoEnum
+import sagres.model.{ErroImportacao, TipoErroImportacaoEnum}
+import tcc.Metricas
 import tcc.validador.validadores.entidades.{Conversor, EntidadeArquivo}
 
 import scala.annotation.tailrec
@@ -26,7 +27,10 @@ object Processadores {
           val numeroLinha = tuplaLinhaIndice._2+1
           val metaDados = metaDadosSemLinha.copy(conteudoLinha = linha, numeroLinha = numeroLinha)
           if(linha.length == metaDados.controleArquivo.tamanhoLinha){
-            processarEtapasSequencial(metaDados, tuplaProcessadorEtapas._1.fromFileLine(metaDados), tuplaProcessadorEtapas._1.entidadeArquivoParaEntidade, tuplaProcessadorEtapas._2) match {
+            val resultados = aplicarRegraInfra(tuplasLinhaIndice, tuplaLinhaIndice, (v: String) => conversor.fromFileLine(metaDados.copy(conteudoLinha = v))) {
+              processarEtapasSequencial(metaDados, tuplaProcessadorEtapas._1.fromFileLine(metaDados), tuplaProcessadorEtapas._1.entidadeArquivoParaEntidade, tuplaProcessadorEtapas._2)
+            }
+             resultados match {
               case Failure(e) => Failure(e)
               case Success(resultados) => {
                 loop(proximas, (acumulador._1 ++: resultados._1,
@@ -47,6 +51,25 @@ object Processadores {
     loop(tuplasLinhaIndice)
   }
 
+  def aplicarRegraInfra[A]( lista: Seq[(String, Int)],tuplaLinhaIndiceAtual: (String, Int), converter: String => EntidadeArquivo)(bloco: => Try[(Seq[TipoErro], Option[A])]): Try[(Seq[TipoErro], Option[A])] = {
+    def temDuplicidade(ent: EntidadeArquivo, converter: (String) => EntidadeArquivo, indiceAtual: Int, listaLinhaIndice: Seq[(String, Int)]): Boolean = {
+      def loop(listaAtual: Seq[(String, Int)], encontrou: Boolean = false): Boolean = {
+        listaAtual match {
+          case Nil => encontrou
+          case _ if encontrou => encontrou
+          case atual :: proximo if atual._2 < indiceAtual => loop(proximo, ent.ehIgual(converter(atual._1)))
+          case _ => encontrou
+        }
+      }
+      loop(listaLinhaIndice)
+    }
+    if(temDuplicidade(converter(tuplaLinhaIndiceAtual._1), converter, tuplaLinhaIndiceAtual._2, lista.toList)){
+      Try((Seq(TipoErro(4,tuplaLinhaIndiceAtual._2+1,tuplaLinhaIndiceAtual._1, "Linha duplicada", TipoErroImportacaoEnum.ERROR)), None))
+    }
+    else
+      bloco
+  }
+
   def processarLinhasParalelo[A](tuplasLinhaIndice: Seq[(String, Int)], metaDadosSemLinha: MetaDados, gerarTuplaProcessadorEtapas: (MetaDados) => Try[(Conversor[A], Seq[Etapa])]): Try[ResultadosValidacao[A]] = Try {
     val tuplaProcessadorEtapas = gerarTuplaProcessadorEtapas(metaDadosSemLinha) match {
       case Failure(e) => throw e
@@ -61,7 +84,10 @@ object Processadores {
       val numeroLinha = linhaIndice._2+1
       val metaDados = metaDadosSemLinha.copy(conteudoLinha = linha, numeroLinha = numeroLinha)
       if(linha.length == metaDados.controleArquivo.tamanhoLinha){
-        processarEtapasSequencial(metaDados, conversor.fromFileLine(metaDados), conversor.entidadeArquivoParaEntidade, etapas) match {
+        val resultados = aplicarRegraInfra(tuplasLinhaIndice, linhaIndice, (v: String) => conversor.fromFileLine(metaDadosSemLinha.copy(conteudoLinha = v))) {
+          processarEtapasSequencial(metaDados, conversor.fromFileLine(metaDados), conversor.entidadeArquivoParaEntidade, etapas)
+        }
+         resultados match {
           case Failure(e) => throw e
           case Success(resultado) => resultado
         }
@@ -77,33 +103,33 @@ object Processadores {
     ResultadosValidacao(result._1, result._2)
   }
 
-  def processarSubEtapaSequencial(subEtapa: SubEtapa, entidadeArquivo: EntidadeArquivo, metaDados: MetaDados): Try[Seq[TipoErro]] = {
-    def loop(regrasAtuais: Seq[Regra], acumulador: Seq[TipoErro] = Seq()): Try[Seq[TipoErro]] = {
-      regrasAtuais match {
-        case Nil => Success(acumulador)
-        case atual :: proximas =>
-          atual.validar(entidadeArquivo, metaDados) match {
-            case Failure(e) => Failure(e)
-            case Success(optionErro) =>
-              optionErro match {
-                case None => loop(proximas, acumulador)
-                case Some(erro) => loop(proximas, erro +: acumulador)
-              }
-          }
-      }
-    }
-    loop(subEtapa.regras)
-  }
+//  def processarSubEtapaSequencial(subEtapa: SubEtapa, entidadeArquivo: EntidadeArquivo, metaDados: MetaDados): Try[Seq[TipoErro]] = {
+//    def loop(regrasAtuais: Seq[Regra], acumulador: Seq[TipoErro] = Seq()): Try[Seq[TipoErro]] = {
+//      regrasAtuais match {
+//        case Nil => Success(acumulador)
+//        case atual :: proximas =>
+//          atual.validar(entidadeArquivo, metaDados) match {
+//            case Failure(e) => Failure(e)
+//            case Success(optionErro) =>
+//              optionErro match {
+//                case None => loop(proximas, acumulador)
+//                case Some(erro) => loop(proximas, erro +: acumulador)
+//              }
+//          }
+//      }
+//    }
+//    loop(subEtapa.regras)
+//  }
 
-  def processarSubEtapa(subEtapa: SubEtapa, entidadeArquivo: EntidadeArquivo, metaDados: MetaDados): Try[( Boolean, Seq[TipoErro])] = {
-    subEtapa.regras.foldLeft(Try((false, Seq.empty[TipoErro]))){
+  def processarSubEtapa(subEtapa: SubEtapa, entidadeArquivo: EntidadeArquivo, metaDados: MetaDados): Try[( Boolean, Seq[ErroImportacao])] = {
+    subEtapa.regras.foldLeft(Try((false, Seq.empty[ErroImportacao]))){
       (acumulador, regra) =>
         acumulador.flatMap(
           tuplaBoolOpErros =>
             regra.validar(entidadeArquivo, metaDados)
               .map(opErro => {
                   val (comErro, erros) = tuplaBoolOpErros
-                  opErro.map(err => (TipoErro.isError(err) || comErro, err +: erros)).getOrElse((comErro, erros))
+                  opErro.map(err => (TipoErro.isError(err) || comErro, err.toErroImportacao(metaDados) +: erros)).getOrElse((comErro, erros))
                 })
         )
     }
@@ -140,16 +166,5 @@ object Processadores {
       case erros => (erros._2, Option(converter(entidadeArquivo, metaDados)))
     }
   }
-
-//  def verificarDuplicidade(ent: EntidadeArquivo, converter: (String) => EntidadeArquivo, indiceAtual: Int, listaLinhaIndice: Seq[(String, Int)]): Option[TipoErro] = {
-//    def loop(listaAtual: Seq[(String, Int)], encontrou: Boolean = false): Boolean = {
-//      listaAtual match {
-//        case Nil => encontrou
-//        case _ if encontrou => encontrou
-//        case atual :: proximo if atual._2 < indiceAtual => loop(proximo, ent.ehIgual(converter(atual._1)))
-//        case _ => encontrou
-//      }
-//    }
-//  }
 
 }

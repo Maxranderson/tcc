@@ -1,9 +1,19 @@
 package tcc.validador
 
-import sagres.model.TipoErroImportacaoEnum
+import sagres.model.{ErroImportacao, TipoErroImportacaoEnum}
 import sagres.model.TipoErroImportacaoEnum.TipoErroImportacaoEnum
 
-sealed case class TipoErro(codigoArquivo: Int, numeroLinha: Int, conteudoLinha: String, msg: String, tipoErroImportacaoEnum: TipoErroImportacaoEnum)
+sealed case class TipoErro(codigoArquivo: Int, numeroLinha: Int, conteudoLinha: String, msg: String, tipoErroImportacaoEnum: TipoErroImportacaoEnum) {
+  def toErroImportacao(metaDados: MetaDados): ErroImportacao = {
+    metaDados.erroBase.copy(
+      codigoArquivo = Some(codigoArquivo),
+      numeroLinha = Some(numeroLinha),
+      conteudoLinha = Some(conteudoLinha),
+      msgErro = Some(msg),
+      tipoErro = Some(tipoErroImportacaoEnum)
+    )
+  }
+}
 
 protected[validador] object TipoErro {
 
@@ -18,4 +28,6 @@ protected[validador] object TipoErro {
   def isError(erro: TipoErro): Boolean = {
     erro.tipoErroImportacaoEnum.equals(TipoErroImportacaoEnum.ERROR)
   }
+
+
 }

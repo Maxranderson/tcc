@@ -1,6 +1,7 @@
 package sagres.model
 
 import sagres.model.TipoErroImportacaoEnum.TipoErroImportacaoEnum
+import tcc.validador.TipoErro
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -44,6 +45,18 @@ case class ImportacaoException(msg: String, msgs: mutable.HashMap[Int, mutable.H
       conteudoLinha = Some(conteudoLinha),
       msgErro = Some(msg),
       tipoErro = Some(tipoErro))
+  }
+
+  def adicionarErros(erros: Seq[TipoErro]): Unit = {
+    val primeiro :: proximos = erros
+    adicionarErro(primeiro.codigoArquivo, primeiro.numeroLinha, primeiro.conteudoLinha, primeiro.msg, primeiro.tipoErroImportacaoEnum)
+    msgs(primeiro.codigoArquivo)(primeiro.tipoErroImportacaoEnum) ++= proximos.par.map(te => erroImportacaoBase.copy(
+      codigoArquivo = Some(te.codigoArquivo),
+      numeroLinha = Some(te.numeroLinha),
+      conteudoLinha = Some(te.conteudoLinha),
+      msgErro = Some(te.msg),
+      tipoErro = Some(te.tipoErroImportacaoEnum)
+    )).toList
   }
 
 }

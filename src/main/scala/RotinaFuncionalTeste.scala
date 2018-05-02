@@ -25,16 +25,19 @@ object RotinaFuncionalTeste extends App {
     erros.adicionarErro(erro.codigoArquivo, erro.numeroLinha, erro.conteudoLinha, erro.msg, erro.tipoErroImportacaoEnum)
   }
 
+  def adicionarErrosNaExcecao(erros2: Seq[TipoErro]): Unit ={
+    erros.adicionarErros(erros2)
+  }
+
   println {
     Metricas.tempoExecucaoPorArquivoEhQuantidadeLinha {
       arquivo =>
-        Validador.validarAcaoFromFile(arquivo, dataCompetenciaArquivo, ugArquivo, controle).map {
+        Validador.validarAcaoFromFile(arquivo, dataCompetenciaArquivo, ugArquivo, controle, erros).map {
         case ResultadosErro(erros) =>
-          println(erros.foldLeft("")((acumulador, entidade) => s"$acumulador\n$entidade" ))
-          erros.foreach(adicionarErroAhExcecao)
+          adicionarErrosNaExcecao(erros)
           Seq.empty
         case ResultadosAviso(erros, entidades) =>
-          erros.foreach(adicionarErroAhExcecao)
+          adicionarErrosNaExcecao(erros)
           entidades
         case ResultadosSucesso(entidades) =>
           entidades

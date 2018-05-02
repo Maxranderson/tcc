@@ -17,18 +17,22 @@ object RotinaFuncionalParaleloTeste extends App {
   implicit val erros: ImportacaoException = ImportacaoException("Falha na importação", erroImportacaoBase = ErroImportacao(None, "201095", 2018, 1, None, 1, None, None, None, None, None))
   val dataCompetenciaArquivo = DateUtils.stringToSqlDate(nomeArquivo.substring(6, 12)).get
 
-  def adicionarErroAhExcecao(erro: TipoErro): Unit = {
+  def adicionarErroNaExcecao(erro: TipoErro): Unit = {
     erros.adicionarErro(erro.codigoArquivo, erro.numeroLinha, erro.conteudoLinha, erro.msg, erro.tipoErroImportacaoEnum)
+  }
+
+  def adicionarErrosNaExcecao(erros2: Seq[TipoErro]): Unit ={
+    erros.adicionarErros(erros2)
   }
 
   println {
     Metricas.tempoExecucaoPorArquivoEhQuantidadeLinha {
-      arquivo => Validador.validarAcaoFromFileParalelo(arquivo, dataCompetenciaArquivo, ugArquivo, controle).foreach {
+      arquivo => Validador.validarAcaoFromFileParalelo(arquivo, dataCompetenciaArquivo, ugArquivo, controle, erros).foreach {
         case ResultadosErro(erros) =>
-          erros.foreach(adicionarErroAhExcecao)
+          adicionarErrosNaExcecao(erros)
           Seq.empty
         case ResultadosAviso(erros, entidades) =>
-          erros.foreach(adicionarErroAhExcecao)
+          adicionarErrosNaExcecao(erros)
           entidades
         case ResultadosSucesso(entidades) => entidades
       }
