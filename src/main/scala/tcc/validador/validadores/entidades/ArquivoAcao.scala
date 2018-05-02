@@ -14,6 +14,11 @@ protected[validadores] case class ArquivoAcao(
                         unidadeMedida: String
                       ) extends EntidadeArquivo with UnidadeGestoraRel {
 
+  def ehIgual(outro: EntidadeArquivo): Boolean = {
+    val outroObj = outro.asInstanceOf[ArquivoAcao]
+    this.codigoUnidadeGestora == outroObj.codigoUnidadeGestora &&
+    this.codigoAcao == outroObj.codigoAcao
+  }
 }
 
 protected[validadores] object ArquivoAcao extends Conversor[Acao] {

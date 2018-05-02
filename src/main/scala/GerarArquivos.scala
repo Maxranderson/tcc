@@ -7,12 +7,26 @@ import scala.util.Try
 
 object GerarArquivos extends App {
   def concatListByNum(vezes: Int, lista: Seq[String]): Seq[String] = {
-    (1 to vezes).map(v => lista).reduce(_ ++: _)
+    modificarCodigoAcao((1 to vezes).map(v => lista).reduce(_ ++: _))
   }
 
   def listaToFile(nome: String, lista: Seq[String]): File = {
     Files.write(Paths.get(s"src/main/resources/arquivos-testes/$nome"),lista.reduce(_ + "\n" + _).getBytes(StandardCharsets.UTF_8))
     new File(nome)
+  }
+
+  def modificarCodigoAcao(lista: Seq[String]): Seq[String] = {
+    lista.zipWithIndex.map(tuplaLinhaIndice => {
+      val (linha, indice) = tuplaLinhaIndice
+      val ug = linha.substring(0,6)
+      val codAcao = linha.substring(6,10)
+      val resto = linha.substring(10, linha.length)
+      s"$ug${preencherComZero(indice.toString, 4)}$resto"
+    })
+  }
+
+  def preencherComZero(campo: String, quantidade: Int): String = {
+    ("0" * (quantidade - campo.length) ) + campo
   }
   println("Digite a quantidade de vezes que as linhas serão multiplicadas:")
   val input = StdIn.readInt()

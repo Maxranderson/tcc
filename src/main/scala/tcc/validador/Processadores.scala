@@ -141,4 +141,15 @@ object Processadores {
     }
   }
 
+//  def verificarDuplicidade(ent: EntidadeArquivo, converter: (String) => EntidadeArquivo, indiceAtual: Int, listaLinhaIndice: Seq[(String, Int)]): Option[TipoErro] = {
+//    def loop(listaAtual: Seq[(String, Int)], encontrou: Boolean = false): Boolean = {
+//      listaAtual match {
+//        case Nil => encontrou
+//        case _ if encontrou => encontrou
+//        case atual :: proximo if atual._2 < indiceAtual => loop(proximo, ent.ehIgual(converter(atual._1)))
+//        case _ => encontrou
+//      }
+//    }
+//  }
+
 }
