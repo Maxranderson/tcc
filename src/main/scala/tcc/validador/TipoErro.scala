@@ -5,7 +5,7 @@ import sagres.model.TipoErroImportacaoEnum.TipoErroImportacaoEnum
 
 sealed case class TipoErro(codigoArquivo: Int, numeroLinha: Int, conteudoLinha: String, msg: String, tipoErroImportacaoEnum: TipoErroImportacaoEnum)
 
-protected[validador] object TipoErro {
+object TipoErro {
 
   def existeTipoErro(lista: Seq[TipoErro]): Boolean = lista match {
     case Nil => false

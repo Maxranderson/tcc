@@ -18,29 +18,28 @@ object Processadores {
     val conversor = tuplaProcessadorEtapas._1
     val etapas = tuplaProcessadorEtapas._2
     @tailrec
-    def loop(linhasAhProcessar: Seq[(String, Int)], acumulador: (Seq[TipoErro], Option[Seq[A]]) = (Seq(), Option(Seq()))): Try[ResultadosValidacao[A]] = {
+    def loop(linhasAhProcessar: Seq[(String, Int)], acumulador: (Seq[TipoErro],Seq[A]) = (Seq(), Seq())): Try[ResultadosValidacao[A]] = {
       linhasAhProcessar match {
-        case Nil => Success(ResultadosValidacao(acumulador._1, acumulador._2))
+        case Nil => Success(ResultadosValidacao(acumulador._1, Some(acumulador._2)))
         case tuplaLinhaIndice :: proximas =>
           val linha = tuplaLinhaIndice._1
           val numeroLinha = tuplaLinhaIndice._2+1
           val metaDados = metaDadosSemLinha.copy(conteudoLinha = linha, numeroLinha = numeroLinha)
+          val entidadeArquivo = conversor.fromFileLine(metaDados)
           if(linha.length == metaDados.controleArquivo.tamanhoLinha){
-            processarEtapasSequencial(metaDados, tuplaProcessadorEtapas._1.fromFileLine(metaDados), tuplaProcessadorEtapas._1.entidadeArquivoParaEntidade, tuplaProcessadorEtapas._2) match {
-              case Failure(e) => Failure(e)
-              case Success(resultados) => {
-                loop(proximas, (acumulador._1 ++: resultados._1,
-                  acumulador._2.map{
-                    seq => resultados._2 match {
-                      case None => seq
-                      case Some(entidade) => entidade +: seq
-                    }
-                  }
-                ))
+            if(acumulador._2.exists(a => conversor.entidadeArquivoIgualAhEntidade(entidadeArquivo,a)))
+              loop( proximas, (acumulador._1 ++: Seq(TipoErro(metaDados.controleArquivo.codigoArquivo, numeroLinha, linha, "Entidade em duplicidade", TipoErroImportacaoEnum.ERROR)), acumulador._2))
+            else
+              processarEtapasSequencial(metaDados, entidadeArquivo, tuplaProcessadorEtapas._1.entidadeArquivoParaEntidade, tuplaProcessadorEtapas._2) match {
+                case Failure(e) => Failure(e)
+                case Success(resultados) => {
+                  loop(proximas, (acumulador._1 ++: resultados._1,
+                    resultados._2.map(_ +: acumulador._2).getOrElse(acumulador._2)
+                  ))
+                }
               }
-            }
           }else {
-            loop( proximas, (acumulador._1 ++: Seq(TipoErro(metaDados.controleArquivo.codigoArquivo, numeroLinha, linha, "Tamanho da linha inválida", TipoErroImportacaoEnum.ERROR)), None))
+            loop( proximas, (acumulador._1 ++: Seq(TipoErro(metaDados.controleArquivo.codigoArquivo, numeroLinha, linha, "Tamanho da linha inválida", TipoErroImportacaoEnum.ERROR)), acumulador._2))
           }
       }
     }

@@ -46,4 +46,10 @@ case class ImportacaoException(msg: String, msgs: mutable.HashMap[Int, mutable.H
       tipoErro = Some(tipoErro))
   }
 
+  def adicionarErros(erros: Seq[ErroImportacao]): Unit = {
+    val h :: t = erros
+    adicionarErro(h.codigoArquivo.get, h.numeroLinha.get, h.conteudoLinha.get, h.msgErro.get, h.tipoErro.get)
+    msgs(h.codigoArquivo.get)(h.tipoErro.get) ++= t
+  }
+
 }

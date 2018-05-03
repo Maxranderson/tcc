@@ -51,4 +51,9 @@ protected[validadores] object ArquivoAcao extends Conversor[Acao] {
   def fromJson(): EntidadeArquivo = {
     ArquivoAcao("", "", "", "", "", "")
   }
+
+  def entidadeArquivoIgualAhEntidade(entidadeArquivo: EntidadeArquivo, entidade: Acao): Boolean = {
+    entidade.unidadeGestora == entidadeArquivo.asInstanceOf[ArquivoAcao].codigoUnidadeGestora &&
+    entidade.codigo == entidadeArquivo.asInstanceOf[ArquivoAcao].codigoAcao
+  }
 }
