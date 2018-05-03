@@ -56,4 +56,6 @@ protected[validadores] object ArquivoAcao extends Conversor[Acao] {
     entidade.unidadeGestora == entidadeArquivo.asInstanceOf[ArquivoAcao].codigoUnidadeGestora &&
     entidade.codigo == entidadeArquivo.asInstanceOf[ArquivoAcao].codigoAcao
   }
+
+  def entidadeIguaAhEntidade(e1: Acao, e2: Acao): Boolean = e1.equalsTo(e2)
 }

@@ -55,25 +55,28 @@ object Processadores {
     val conversor = tuplaProcessadorEtapas._1
     val etapas = tuplaProcessadorEtapas._2
 
-    val result: (Seq[TipoErro], Option[Seq[A]]) = tuplasLinhaIndice.par.map(linhaIndice => {
+    val result: (Seq[TipoErro], Seq[A]) = tuplasLinhaIndice.par.map(linhaIndice => {
       val linha = linhaIndice._1
       val numeroLinha = linhaIndice._2+1
       val metaDados = metaDadosSemLinha.copy(conteudoLinha = linha, numeroLinha = numeroLinha)
       if(linha.length == metaDados.controleArquivo.tamanhoLinha){
         processarEtapasSequencial(metaDados, conversor.fromFileLine(metaDados), conversor.entidadeArquivoParaEntidade, etapas) match {
           case Failure(e) => throw e
-          case Success(resultado) => resultado
+          case Success(resultado) => (resultado._1, (numeroLinha, linha, resultado._2))
         }
       }else {
-        (Seq(TipoErro(metaDados.controleArquivo.codigoArquivo, numeroLinha, linha, "Tamanho da linha inválida", TipoErroImportacaoEnum.ERROR)), None)
+        (Seq(TipoErro(metaDados.controleArquivo.codigoArquivo, numeroLinha, linha, "Tamanho da linha inválida", TipoErroImportacaoEnum.ERROR)), (numeroLinha, linha, None))
       }
-    }).foldLeft((Seq.empty[TipoErro], Option(Seq.empty[A])))((atual, proximo) => (atual._1 ++: proximo._1,
-      (atual._2, proximo._2) match {
-        case (Some(a), Some(b)) => Option(b +: a)
-        case _ => None
-      }
-    ))
-    ResultadosValidacao(result._1, result._2)
+    }).foldLeft((Seq.empty[TipoErro], Seq.empty[A]))((acumulador, resultado) => {
+      val ((erros, entidades),(resErros, (numeroLinha, linha, resEntidade))) = (acumulador, resultado)
+      if(entidades.exists(e1 => resEntidade.exists(e2 => conversor.entidadeIguaAhEntidade(e1, e2))))
+        (erros ++: Seq(TipoErro(metaDadosSemLinha.controleArquivo.codigoArquivo, numeroLinha, linha, "Entidade em duplicidade", TipoErroImportacaoEnum.ERROR)), entidades)
+      else
+      (erros ++: resErros,
+        resEntidade.map(_ +: entidades).getOrElse(entidades)
+      )
+    })
+    ResultadosValidacao(result._1, Some(result._2))
   }
 
   def processarSubEtapaSequencial(subEtapa: SubEtapa, entidadeArquivo: EntidadeArquivo, metaDados: MetaDados): Try[Seq[TipoErro]] = {

@@ -10,6 +10,8 @@ protected[validador] trait Conversor[A] {
 
   def entidadeArquivoIgualAhEntidade(entidadeArquivo: EntidadeArquivo, entidade: A): Boolean
 
+  def entidadeIguaAhEntidade(e1: A, e2: A): Boolean
+
   def fromFileLine(metaDados: MetaDados): EntidadeArquivo
 
   def fromJson(): EntidadeArquivo
