@@ -14,6 +14,22 @@ object GerarArquivos extends App {
     Files.write(Paths.get(s"src/main/resources/arquivos-testes/$nome"),lista.reduce(_ + "\n" + _).getBytes(StandardCharsets.UTF_8))
     new File(nome)
   }
+
+  def modificarCodigoAcao(lista: Seq[String]): Seq[String] = {
+        lista.zipWithIndex.map(tuplaLinhaIndice => {
+          val (linha, indice) = tuplaLinhaIndice
+          val ug = linha.substring(0,6)
+          val codAcao = linha.substring(6,10)
+          val resto = linha.substring(10, linha.length)
+          s"$ug${preencherComZero((indice+1).toString, 4)}$resto"
+        })
+//    lista
+  }
+
+  def preencherComZero(campo: String, quantidade: Int): String = {
+    ("0" * (quantidade - campo.length) ) + campo
+  }
+
   println("Digite a quantidade de vezes que as linhas serão multiplicadas:")
   val input = StdIn.readInt()
   val listaArquivo = Source.fromResource("201095012018Acao.txt").getLines.toList
