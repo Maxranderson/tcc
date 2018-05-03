@@ -43,7 +43,7 @@ object RotinaFuncionalTeste extends App {
           adicionarErrosNaExcecao(erros)
           Seq.empty
         case ResultadosAviso(erros, entidades) =>
-          erros.foreach(adicionarErroAhExcecao)
+          adicionarErrosNaExcecao(erros)
           entidades
         case ResultadosSucesso(entidades) =>
           entidades

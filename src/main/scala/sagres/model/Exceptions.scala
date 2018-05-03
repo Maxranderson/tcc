@@ -47,9 +47,13 @@ case class ImportacaoException(msg: String, msgs: mutable.HashMap[Int, mutable.H
   }
 
   def adicionarErros(erros: Seq[ErroImportacao]): Unit = {
-    val h :: t = erros
-    adicionarErro(h.codigoArquivo.get, h.numeroLinha.get, h.conteudoLinha.get, h.msgErro.get, h.tipoErro.get)
-    msgs(h.codigoArquivo.get)(h.tipoErro.get) ++= t
+    erros.groupBy(_.tipoErro.get).foreach(f =>{
+      val (tipo, erros) = f
+      val h :: t = erros
+      adicionarErro(h.codigoArquivo.get, h.numeroLinha.get, h.conteudoLinha.get, h.msgErro.get, tipo)
+      msgs(h.codigoArquivo.get)(tipo) ++= t
+    }
+    )
   }
 
 }
