@@ -7,7 +7,7 @@ import scala.util.Try
 
 object GerarArquivos extends App {
   def concatListByNum(vezes: Int, lista: Seq[String]): Seq[String] = {
-    (1 to vezes).map(v => lista).reduce(_ ++: _)
+    modificarCodigoAcao((1 to vezes).map(v => lista).reduce(_ ++: _))
   }
 
   def listaToFile(nome: String, lista: Seq[String]): File = {
