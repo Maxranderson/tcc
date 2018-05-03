@@ -47,16 +47,10 @@ case class ImportacaoException(msg: String, msgs: mutable.HashMap[Int, mutable.H
       tipoErro = Some(tipoErro))
   }
 
-  def adicionarErros(erros: Seq[TipoErro]): Unit = {
+  def adicionarErros(erros: Seq[ErroImportacao]): Unit = {
     val primeiro :: proximos = erros
-    adicionarErro(primeiro.codigoArquivo, primeiro.numeroLinha, primeiro.conteudoLinha, primeiro.msg, primeiro.tipoErroImportacaoEnum)
-    msgs(primeiro.codigoArquivo)(primeiro.tipoErroImportacaoEnum) ++= proximos.par.map(te => erroImportacaoBase.copy(
-      codigoArquivo = Some(te.codigoArquivo),
-      numeroLinha = Some(te.numeroLinha),
-      conteudoLinha = Some(te.conteudoLinha),
-      msgErro = Some(te.msg),
-      tipoErro = Some(te.tipoErroImportacaoEnum)
-    )).toList
+    adicionarErro(primeiro.codigoArquivo.get, primeiro.numeroLinha.get, primeiro.conteudoLinha.get, primeiro.msgErro.get, primeiro.tipoErro.get)
+    msgs(primeiro.codigoArquivo.get)(primeiro.tipoErro.get) ++= proximos
   }
 
 }

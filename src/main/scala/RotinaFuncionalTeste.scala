@@ -21,23 +21,15 @@ object RotinaFuncionalTeste extends App {
   implicit val erros: ImportacaoException = ImportacaoException("Falha na importação", erroImportacaoBase = ErroImportacao(None, "201095", 2018, 1, None, 1, None, None, None, None, None))
   val dataCompetenciaArquivo = DateUtils.stringToSqlDate(nomeArquivo.substring(6, 12)).get
 
-  def adicionarErroAhExcecao(erro: TipoErro): Unit = {
-    erros.adicionarErro(erro.codigoArquivo, erro.numeroLinha, erro.conteudoLinha, erro.msg, erro.tipoErroImportacaoEnum)
-  }
-
-  def adicionarErrosNaExcecao(erros2: Seq[TipoErro]): Unit ={
-    erros.adicionarErros(erros2)
-  }
-
   println {
     Metricas.tempoExecucaoPorArquivoEhQuantidadeLinha {
       arquivo =>
-        Validador.validarAcaoFromFile(arquivo, dataCompetenciaArquivo, ugArquivo, controle, erros).map {
-        case ResultadosErro(erros) =>
-          adicionarErrosNaExcecao(erros)
+        Validador.validarAcaoFromFile(arquivo, dataCompetenciaArquivo, ugArquivo, controle, erros.erroImportacaoBase).map {
+        case ResultadosErro(erros2) =>
+          erros.adicionarErros(erros2)
           Seq.empty
-        case ResultadosAviso(erros, entidades) =>
-          adicionarErrosNaExcecao(erros)
+        case ResultadosAviso(erros2, entidades) =>
+          erros.adicionarErros(erros2)
           entidades
         case ResultadosSucesso(entidades) =>
           entidades
