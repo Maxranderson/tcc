@@ -1,0 +1,41 @@
+Página 14:
+Código Java é mais performatico quanto mais é usado, por isso é necessário um tempo de aquecimento para dar o compilador
+um tempo para produzir um melhor código. Esse tempo de execução é necessário se não vai ser medido somente a desempenho
+do compilador.
+
+Página 15:
+Ponto importante: o compilador usa o profile feedback of code para determinar quais as melhores otimizações para aplicar
+quando compilando o método. O profile feedback é baseado em quais métodos são frequentemente chamados. A profundidade da
+pilha quando eles são chamados, o tipo atual(incluindo subclasses) de seus argumentos, e assim por diante.
+
+Página 29:
+Programas que processam o mesmo conjunto de dados vai produzir um resultado diferente a cada vez que ele executar.
+Processos rodando em segundo plano podem afetar os resultados.
+
+Página 74:
+O Java vai compilar para bytecode que depois são executados pelo binário do Java. Como o Java possui um código binário
+ideal, a plataforma Java pode compilar esse binário ideal para o binário da plataforma quando o código executar. Este
+tipo de compilação ocorre "na hora certa" ou "just in time".
+
+Página 75:
+Quando a JVM executa o código, ela não começa o compilando imediatamente. Têm dois motivos para isso. O primeiro, é que
+se o código for executado uma única vez, então compilar é uma perda de tempo, vai ser melhor interpretar o bytecode. Mas
+se o código for executado frequentemente, como um loop, vale a pena compilar. É por isso que a JVM vai interpretar
+primeiro para verificar quais métodos estão sendo chamados o suficiente para ser necessario compilar.
+O segundo motivo, é que quanto mais a JVM executa um método ou loop, mais ele tem informação sobre o código, isto
+permite que a JVM faça uma quantidade de otimizações quando compilar o código.
+
+Podem afetar o desempenho:
+    OO:
+        Ganho:
+            Instanciando o validador para cada linha melhora o uso inicial;
+            ListBuffer têm um bom desempenho no append;
+            Erros são adicionados a exceção assim que criados;
+
+        Perda:
+            Instanciando o validador prejudica ao longo do tempo;
+            Uso do lazy perde um pouco de desempenho;
+            Usado o apply na lista de linha, possui tempo linear;
+
+    FP:
+        Ganho:
